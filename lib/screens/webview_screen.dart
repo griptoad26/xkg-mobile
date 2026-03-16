@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_inappwebview/flutter_inappwebview.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../models/llm_app.dart';
 
-class WebViewScreen extends StatefulWidget {
+class WebViewScreen extends StatelessWidget {
   final LLMApp app;
 
   const WebViewScreen({
@@ -10,16 +10,26 @@ class WebViewScreen extends StatefulWidget {
     required this.app,
   });
 
-  @override
-  State<WebViewScreen> createState() => _WebViewScreenState();
-}
-
-class _WebViewScreenState extends State<WebViewScreen> {
-  late InAppWebViewController _controller;
-  bool _isLoading = true;
+  Future<void> _launchUrl(BuildContext context) async {
+    final uri = Uri.parse(app.url);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } else {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Could not launch ${app.url}')),
+        );
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    // Launch immediately
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _launchUrl(context);
+    });
+
     return Scaffold(
       appBar: AppBar(
         title: Row(
@@ -28,70 +38,48 @@ class _WebViewScreenState extends State<WebViewScreen> {
               width: 32,
               height: 32,
               decoration: BoxDecoration(
-                color: widget.app.color.withOpacity(0.15),
+                color: app.color.withOpacity(0.15),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Icon(
-                widget.app.icon,
-                color: widget.app.color,
+                app.icon,
+                color: app.color,
                 size: 18,
               ),
             ),
             const SizedBox(width: 8),
-            Text(widget.app.name),
+            Text(app.name),
           ],
         ),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
-            onPressed: () => _controller.reload(),
-          ),
-          IconButton(
-            icon: const Icon(Icons.share),
-            onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Share to XKG coming soon!')),
-              );
-            },
+            onPressed: () => _launchUrl(context),
           ),
         ],
       ),
-      body: Stack(
-        children: [
-          InAppWebView(
-            initialUrlRequest: URLRequest(url: WebUri(widget.app.url)),
-            initialOptions: InAppWebViewGroupOptions(
-              androidOptions: AndroidInAppWebViewOptions(
-                useShouldOverrideUrlLoading: true,
-                mediaPlaybackRequiresUserGesture: true,
-              ),
-              iosOptions: IOSInAppWebViewOptions(
-                javaScriptEnabled: true,
-              ),
-              crossPlatformOptions: InAppWebViewCrossPlatformOptions(
-                supportZoom: true,
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            CircularProgressIndicator(color: app.color),
+            const SizedBox(height: 16),
+            Text(
+              'Opening ${app.name}...',
+              style: TextStyle(color: app.color),
+            ),
+            const SizedBox(height: 24),
+            ElevatedButton.icon(
+              onPressed: () => _launchUrl(context),
+              icon: const Icon(Icons.open_in_new),
+              label: const Text('Click to Open'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: app.color,
+                foregroundColor: Colors.white,
               ),
             ),
-            onWebViewCreated: (controller) {
-              _controller = controller;
-            },
-            onLoadStart: (controller, url) {
-              setState(() => _isLoading = true);
-            },
-            onLoadStop: (controller, url) {
-              setState(() => _isLoading = false);
-            },
-            shouldOverrideUrlLoading: (controller, navigationAction) async {
-              return NavigationActionPolicy.ALLOW;
-            },
-          ),
-          if (_isLoading)
-            const Center(
-              child: CircularProgressIndicator(
-                color: Color(0xFF6366F1),
-              ),
-            ),
-        ],
+          ],
+        ),
       ),
     );
   }
