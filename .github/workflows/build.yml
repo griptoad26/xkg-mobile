@@ -12,15 +12,17 @@ jobs:
     - uses: subosito/flutter-action@v2
       with:
         flutter-version: '3.24.5'
-    - name: Create Flutter project
+    - name: Setup
       run: |
-        mkdir app
-        cd app
-        flutter create --platforms=android .
-        cp -r ../lib/* lib/
-        cp ../pubspec.yaml .
+        rm -rf app
+        flutter create app --platforms=android
+        cp -r lib app/
+        cp pubspec.yaml app/
     - name: Build
-      run: cd app && flutter pub get && flutter build apk --debug
+      run: |
+        cd app
+        flutter pub get
+        flutter build apk --debug
     - uses: actions/upload-artifact@v4
       with:
         name: app-debug.apk
