@@ -3,6 +3,7 @@ import '../models/llm_app.dart';
 import '../widgets/llm_card.dart';
 import '../widgets/search_bar.dart';
 import '../services/xkg_service.dart';
+import '../services/storage_service.dart';
 import 'webview_screen.dart';
 import 'settings_screen.dart';
 import 'add_app_screen.dart';

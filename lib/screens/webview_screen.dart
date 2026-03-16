@@ -49,7 +49,6 @@ class _WebViewScreenState extends State<WebViewScreen> {
           IconButton(
             icon: const Icon(Icons.share),
             onPressed: () {
-              // TODO: Share current page to XKG
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(content: Text('Share to XKG coming soon!')),
               );
@@ -60,12 +59,18 @@ class _WebViewScreenState extends State<WebViewScreen> {
       body: Stack(
         children: [
           InAppWebView(
-            initialUrlRequest: URLRequest(url: Uri.parse(widget.app.url)),
-            initialOptions: InAppWebViewOptions(
-              useShouldOverrideUrlLoading: true,
-              mediaPlaybackRequiresUserGesture: true,
-              javaScriptEnabled: true,
-              supportZoom: true,
+            initialUrlRequest: URLRequest(url: WebUri(widget.app.url)),
+            initialOptions: InAppWebViewGroupOptions(
+              androidOptions: AndroidInAppWebViewOptions(
+                useShouldOverrideUrlLoading: true,
+                mediaPlaybackRequiresUserGesture: true,
+              ),
+              iosOptions: IOSInAppWebViewOptions(
+                javaScriptEnabled: true,
+              ),
+              crossPlatformOptions: InAppWebViewCrossPlatformOptions(
+                supportZoom: true,
+              ),
             ),
             onWebViewCreated: (controller) {
               _controller = controller;
