@@ -16,7 +16,7 @@ class LLMApp {
   static const List<LLMApp> defaultApps = [
     LLMApp(
       name: 'Grok',
-      url: 'https://x.com/grok',
+      url: 'https://x.com/i/grok',
       color: Color(0xFF000000),
       icon: Icons.smart_toy_outlined,
     ),
