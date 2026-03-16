@@ -36,18 +36,18 @@ if %errorlevel% neq 0 (
 echo.
 echo [3/4] APK built successfully!
 echo.
-
-REM Find the APK
-for /r %%i in (build\app\outputs\flutter-apk\*.apk) do (
-    echo APK Location: %%i
-    echo.
-    echo To install on phone:
-    echo   1. Connect phone via USB
-    echo   2. Enable Developer Mode + USB Debugging on phone
-    echo   3. Run: flutter install
-    echo.
-    echo   OR transfer the APK file to your phone manually
-)
+echo ========================================
+echo APK LOCATION:
+echo   %CD%\build\app\outputs\flutter-apk\app-debug.apk
+echo ========================================
+echo.
+echo To install:
+echo   1. Connect phone via USB with Developer Mode + USB Debugging enabled
+echo   2. Run: flutter install
+echo.
+echo   OR transfer this file to your phone manually:
+echo   %CD%\build\app\outputs\flutter-apk\app-debug.apk
+echo.
 
 echo [4/4] Done!
 echo.
