@@ -9,6 +9,86 @@
 
 ---
 
+## Build Status
+
+| Feature | Status |
+|---------|--------|
+| Home screen with LLM grid | ✅ Done |
+| WebView for each LLM | ✅ Done |
+| Settings (XKG endpoint) | ✅ Done |
+| Dark theme | ✅ Done |
+| XKG search | ✅ Done |
+| Custom LLM apps | ✅ Done |
+| XKG API integration | ✅ Done |
+| Build APK | 🔧 Needs Flutter |
+
+---
+
+## Quick Start (Building the App)
+
+### Option 1: Windows
+
+1. **Install Flutter SDK:**
+   - Download from: https://docs.flutter.dev/get-started/install/windows
+   - Extract to: `C:\flutter`
+   - Add to PATH: `C:\flutter\bin`
+
+2. **Install Android Studio:**
+   - Download from: https://developer.android.com/studio
+   - Run installer
+   - Open Android Studio → SDK Manager → Install tools
+
+3. **Clone and build:**
+   ```cmd
+   cd C:\path\to\xkg-mobile
+   flutter pub get
+   flutter build apk --debug
+   ```
+
+4. **Find APK at:**
+   ```
+   build\app\outputs\flutter-apk\app-debug.apk
+   ```
+
+### Option 2: macOS
+
+1. **Install Flutter:**
+   ```bash
+   brew install flutter
+   ```
+
+2. **Build:**
+   ```bash
+   cd ~/projects/xkg-mobile
+   flutter pub get
+   flutter build ipa  # For iOS
+   flutter build apk  # For Android
+   ```
+
+### Option 3: Linux (WSL)
+
+1. **Install Flutter in WSL:**
+   ```bash
+   sudo apt update
+   sudo apt install curl git unzip xz-utils zip libglu1-mesa
+   git clone https://github.com/flutter/flutter.git -b stable ~/flutter
+   export PATH="$PATH:$HOME/flutter/bin"
+   flutter precache
+   ```
+
+2. **Install Android SDK:**
+   - Download command-line tools from Android developer site
+   - Set ANDROID_HOME and ANDROID_SDK_ROOT
+
+3. **Build:**
+   ```bash
+   cd ~/projects/xkg-mobile
+   flutter pub get
+   flutter build apk --debug
+   ```
+
+---
+
 ## Core Features
 
 ### 1. LLM Launcher
