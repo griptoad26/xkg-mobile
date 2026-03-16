@@ -12,10 +12,11 @@ jobs:
     - uses: subosito/flutter-action@v2
       with:
         flutter-version: '3.24.5'
+    - run: flutter create --platforms=android xkg_app
+    - working-directory: xkg_app
     - run: flutter pub get
-    - run: flutter create --platforms=android .
     - run: flutter build apk --debug
     - uses: actions/upload-artifact@v4
       with:
         name: app-debug.apk
-        path: build/app/outputs/flutter-apk/app-debug.apk
+        path: xkg_app/build/app/outputs/flutter-apk/app-debug.apk
