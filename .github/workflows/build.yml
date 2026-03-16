@@ -20,27 +20,14 @@ jobs:
         flutter-version: '3.24.5'
         channel: 'stable'
     
-    - name: Cache Flutter dependencies
-      uses: actions/cache@v4
-      with:
-        path: |
-          ~/.pub-cache
-          build/
-          .dart_tool/
-        key: ${{ runner.os }}-flutter-${{ hashFiles('**/pubspec.lock') }}
-        restore-keys: |
-          ${{ runner.os }}-flutter-
+    - name: Add pub.dev as source
+      run: flutter config --add-list-source https://pub.dev
     
     - name: Install dependencies
       run: flutter pub get
     
     - name: Create Android project
-      run: |
-        flutter config --no-analytics
-        flutter create --platforms=android .
-    
-    - name: Accept Android licenses
-      run: yes | flutter doctor --android-licenses || true
+      run: flutter create --platforms=android .
     
     - name: Build debug APK
       run: flutter build apk --debug
