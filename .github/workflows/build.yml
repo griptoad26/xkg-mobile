@@ -11,7 +11,8 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
-    - uses: actions/checkout@v4
+    - name: Checkout code
+      uses: actions/checkout@v4
     
     - name: Setup Flutter
       uses: subosito/flutter-action@v2
@@ -19,16 +20,29 @@ jobs:
         flutter-version: '3.24.5'
         channel: 'stable'
     
-    - name: Setup Android SDK
-      uses: android-actions/setup-android@v2
+    - name: Cache Flutter dependencies
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.pub-cache
+          build/
+          .dart_tool/
+        key: ${{ runner.os }}-flutter-${{ hashFiles('**/pubspec.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-flutter-
     
     - name: Install dependencies
       run: flutter pub get
     
     - name: Create Android project
-      run: flutter create --platforms=android .
+      run: |
+        flutter config --no-analytics
+        flutter create --platforms=android .
     
-    - name: Build APK
+    - name: Accept Android licenses
+      run: yes | flutter doctor --android-licenses || true
+    
+    - name: Build debug APK
       run: flutter build apk --debug
     
     - name: Upload APK
@@ -36,3 +50,4 @@ jobs:
       with:
         name: app-debug.apk
         path: build/app/outputs/flutter-apk/app-debug.apk
+        retention-days: 7
