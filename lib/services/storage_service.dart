@@ -43,7 +43,7 @@ class StorageService {
   static String getXKGEndpoint() {
     try {
       final box = Hive.box(_settingsBox);
-      return box.get('xkg_endpoint', defaultValue: '');
+      return box.get('xkg_endpoint', defaultValue: 'http://66.179.191.93:5000');
     } catch (e) {
       return '';
     }

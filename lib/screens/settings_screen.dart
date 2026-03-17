@@ -57,7 +57,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             controller: _endpointController,
             decoration: InputDecoration(
               labelText: 'XKG Endpoint',
-              hintText: 'http://192.168.1.x:5000',
+              hintText: 'http://66.179.191.93:5000',
               filled: true,
               fillColor: const Color(0xFF12121A),
               border: OutlineInputBorder(
@@ -81,7 +81,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       borderRadius: BorderRadius.circular(12),
                     ),
                   ),
-                  child: const Text('Save'),
+                  child: const Text(
+                    'Save',
+                    style: TextStyle(color: Colors.white),
+                  ),
                 ),
               ),
               const SizedBox(width: 12),
@@ -115,7 +118,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           height: 20,
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
-                      : const Text('Test'),
+                      : const Text('Test', style: TextStyle(color: Colors.white)),
                 ),
               ),
             ],
