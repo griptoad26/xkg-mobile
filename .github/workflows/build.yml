@@ -19,7 +19,7 @@ jobs:
       run: |
         ls -la
         rm -rf app android
-        flutter create --org com.xkg --project-name xkg_mobile --platforms=android xkg_app
+        flutter create --platforms=android xkg_app
         cp -r lib/* xkg_app/lib/
         cp pubspec.yaml xkg_app/
     
