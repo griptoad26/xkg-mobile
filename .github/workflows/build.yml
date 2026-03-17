@@ -9,21 +9,27 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
+    
     - uses: subosito/flutter-action@v2
       with:
         flutter-version: '3.24.5'
-    - name: Setup
+        cache: true
+    
+    - name: Create Flutter project
       run: |
-        rm -rf app
-        flutter create app --platforms=android
-        cp -r lib app/
-        cp pubspec.yaml app/
+        ls -la
+        rm -rf app android
+        flutter create --org com.xkg --project-name xkg_mobile --platforms=android xkg_app
+        cp -r lib/* xkg_app/lib/
+        cp pubspec.yaml xkg_app/
+    
     - name: Build
+      working-directory: xkg_app
       run: |
-        cd app
         flutter pub get
         flutter build apk --debug
+    
     - uses: actions/upload-artifact@v4
       with:
         name: app-debug.apk
-        path: app/build/app/outputs/flutter-apk/app-debug.apk
+        path: xkg_app/build/app/outputs/flutter-apk/app-debug.apk
