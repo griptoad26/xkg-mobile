@@ -15,16 +15,21 @@ jobs:
         flutter-version: '3.24.5'
         cache: true
     
-    - name: Create Flutter project
+    - name: Setup Flutter project
       run: |
-        ls -la
-        rm -rf app android
-        flutter create --platforms=android xkg_app
-        cp -r lib/* xkg_app/lib/
-        cp pubspec.yaml xkg_app/
+        # Create fresh flutter project
+        rm -rf flutter_app
+        flutter create flutter_app --platforms=android
+        
+        # Copy our source files
+        cp -r lib/* flutter_app/lib/
+        cp pubspec.yaml flutter_app/
+        
+        # Fix package name in Android
+        sed -i 's/package="com.example.flutter_app"/package="com.xkg.xkg_mobile"/' flutter_app/android/app/src/main/AndroidManifest.xml
     
     - name: Build
-      working-directory: xkg_app
+      working-directory: flutter_app
       run: |
         flutter pub get
         flutter build apk --debug
@@ -32,4 +37,4 @@ jobs:
     - uses: actions/upload-artifact@v4
       with:
         name: app-debug.apk
-        path: xkg_app/build/app/outputs/flutter-apk/app-debug.apk
+        path: flutter_app/build/app/outputs/flutter-apk/app-debug.apk
