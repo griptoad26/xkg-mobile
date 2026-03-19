@@ -13,28 +13,21 @@ jobs:
     - uses: subosito/flutter-action@v2
       with:
         flutter-version: '3.24.5'
-        cache: true
     
-    - name: Setup Flutter project
+    - name: Create project
       run: |
-        # Create fresh flutter project
-        rm -rf flutter_app
-        flutter create flutter_app --platforms=android
-        
-        # Copy our source files
-        cp -r lib/* flutter_app/lib/
-        cp pubspec.yaml flutter_app/
-        
-        # Fix package name in Android
-        sed -i 's/package="com.example.flutter_app"/package="com.xkg.xkg_mobile"/' flutter_app/android/app/src/main/AndroidManifest.xml
+        rm -rf app
+        flutter create app
+        cp -r lib/* app/lib/
+        cp pubspec.yaml app/
     
     - name: Build
-      working-directory: flutter_app
       run: |
+        cd app
         flutter pub get
         flutter build apk --debug
     
     - uses: actions/upload-artifact@v4
       with:
         name: app-debug.apk
-        path: flutter_app/build/app/outputs/flutter-apk/app-debug.apk
+        path: app/build/app/outputs/flutter-apk/app-debug.apk
