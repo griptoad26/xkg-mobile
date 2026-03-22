@@ -16,18 +16,21 @@ jobs:
     
     - name: Create project
       run: |
-        rm -rf app
-        flutter create app
-        cp -r lib/* app/lib/
-        cp pubspec.yaml app/
+        rm -rf build_app
+        mkdir build_app
+        cd build_app
+        flutter create --platforms=android .
+        cd ..
+        cp -r lib/* build_app/lib/
+        cp pubspec.yaml build_app/
     
     - name: Build
       run: |
-        cd app
+        cd build_app
         flutter pub get
         flutter build apk --debug
     
     - uses: actions/upload-artifact@v4
       with:
         name: app-debug.apk
-        path: app/build/app/outputs/flutter-apk/app-debug.apk
+        path: build_app/build/app/outputs/flutter-apk/app-debug.apk
