@@ -10,6 +10,7 @@ class SettingsScreen extends StatefulWidget {
 
 class _SettingsScreenState extends State<SettingsScreen> {
   final TextEditingController _endpointController = TextEditingController();
+  final TextEditingController _openclawController = TextEditingController();
   bool _isLoading = false;
 
   @override
@@ -21,11 +22,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
   void _loadSettings() {
     final settings = Hive.box('settings');
     _endpointController.text = settings.get('xkgEndpoint', defaultValue: 'http://100.92.247.46:5000');
+    _openclawController.text = settings.get('openclawEndpoint', defaultValue: 'http://127.0.0.1:18789');
   }
 
   Future<void> _saveSettings() async {
     final settings = Hive.box('settings');
     await settings.put('xkgEndpoint', _endpointController.text);
+    await settings.put('openclawEndpoint', _openclawController.text);
     
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -66,6 +69,23 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 borderSide: BorderSide.none,
               ),
               prefixIcon: const Icon(Icons.dns_outlined),
+            ),
+          ),
+          const SizedBox(height: 12),
+          
+          // OpenClaw Endpoint
+          TextField(
+            controller: _openclawController,
+            decoration: InputDecoration(
+              labelText: 'OpenClaw Relay',
+              hintText: 'http://127.0.0.1:18789',
+              filled: true,
+              fillColor: const Color(0xFF12121A),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide.none,
+              ),
+              prefixIcon: const Icon(Icons.rocket_launch_outlined),
             ),
           ),
           const SizedBox(height: 12),
