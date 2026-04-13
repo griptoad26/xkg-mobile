@@ -20,7 +20,7 @@ class LLMCard extends StatelessWidget {
           color: const Color(0xFF12121A),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: app.color.withOpacity(0.3),
+            color: app.color.withValues(alpha: 0.3),
             width: 1,
           ),
         ),
@@ -31,7 +31,7 @@ class LLMCard extends StatelessWidget {
               width: 56,
               height: 56,
               decoration: BoxDecoration(
-                color: app.color.withOpacity(0.15),
+                color: app.color.withValues(alpha: 0.15),
                 borderRadius: BorderRadius.circular(16),
               ),
               child: Icon(

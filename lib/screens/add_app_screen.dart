@@ -37,7 +37,7 @@ class _AddAppScreenState extends State<AddAppScreen> {
       StorageService.saveCustomApp({
         'name': _nameController.text,
         'url': _urlController.text,
-        'color': _selectedColor.value,
+        'color': _selectedColor.toARGB32(),
       });
       Navigator.pop(context, true);
     }
