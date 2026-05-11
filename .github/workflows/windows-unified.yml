@@ -14,25 +14,27 @@ jobs:
     steps:
     - name: Checkout XKG Mobile repo
       uses: actions/checkout@v4
+      with:
+        fetch-depth: 1
     
-    - name: Download XKG Server
+    - name: Download and extract XKG Server
       shell: pwsh
       run: |
-        curl -sL https://github.com/griptoad26/x-knowledge-graph/archive/refs/heads/main.zip -o server.zip
-        Write-Host "Extracting..."
+        curl -sL https://github.com/griptoad26/x-knowledge-graph/archive/refs/heads/main.zip -o server.zip -o server.zip
         Expand-Archive -Path server.zip -DestinationPath . -Force
-        Write-Host "After extract:"
-        Get-ChildItem | Select-Object Name, PSIsContainer
-        $dir = Get-ChildItem -Directory | Where-Object { $_.Name -ne 'xkg-mobile' -and $_.Name -ne 'build' -and $_.Name -ne 'xkg-desktop-bundle' } | Select-Object -First 1
-        if ($dir) {
-            Write-Host "Renaming $($dir.Name) to xkg-server"
-            Rename-Item $dir.Name xkg-server -Force
+        # Find the extracted directory (matches x-knowledge-graph*)
+        $matches = Get-ChildItem -Directory | Where-Object { $_.Name -match '^x-knowledge-graph' }
+        if ($matches) {
+            $dir = $matches | Select-Object -First 1
+            Write-Host "Found: $($dir.Name)"
+            Move-Item $dir.Name xkg-server -Force
         }
+        # Verify
         if (Test-Path "xkg-server\start_waitress.py") {
-            Write-Host "SUCCESS: xkg-server ready"
-            Get-ChildItem xkg-server | Select-Object Name
+            Write-Host "XKG Server ready: $(Get-ChildItem xkg-server | Select-Object -First 3 | ForEach-Object { $_.Name })"
         } else {
-            Write-Host "ERROR: start_waitress.py not found"
+            Write-Host "ERROR: xkg-server not ready"
+            Write-Host "Current dirs: $(Get-ChildItem -Directory | ForEach-Object { $_.Name } | Out-String)"
             exit 1
         }
     
@@ -58,18 +60,21 @@ jobs:
       shell: pwsh
       run: |
         if (!(Test-Path "xkg-server\start_waitress.py")) {
-            Write-Host "ERROR: xkg-server not found"
+            Write-Host "ERROR: xkg-server missing"
             exit 1
         }
         Write-Host "Building XKG Server..."
         Set-Location xkg-server
         pyinstaller --onefile --name XKnowledgeGraphServer --hidden-import flask --hidden-import flask_cors --hidden-import waitress --hidden-import werkzeug --hidden-import jinja2 --hidden-import markupsafe --hidden-import networkx --hidden-import pandas --hidden-import numpy --hidden-import requests start_waitress.py
         Set-Location ..
-        if (!(Test-Path "xkg-server\dist\XKnowledgeGraphServer.exe")) {
-            Write-Host "ERROR: Server exe not created"
+        if (Test-Path "xkg-server\dist\XKnowledgeGraphServer.exe") {
+            $size = [math]::Round((Get-Item "xkg-server\dist\XKnowledgeGraphServer.exe").Length / 1MB, 1)
+            Write-Host "Server EXE built: ${size}MB"
+        } else {
+            Write-Host "ERROR: Server exe not found"
+            Get-ChildItem xkg-server\dist -ErrorAction SilentlyContinue
             exit 1
         }
-        Write-Host "Server EXE built successfully"
     
     - name: Package Bundle
       shell: pwsh
@@ -79,12 +84,11 @@ jobs:
         Copy-Item "xkg-server\dist\XKnowledgeGraphServer.exe" xkg-desktop-bundle\
         Copy-Item "xkg-server\start_waitress.py" xkg-desktop-bundle\
         
-        "@`n@echo off`nstart `"`" XKnowledgeGraphServer.exe`necho XKG Server started on port 18050`npause`n"@ | Out-File -FilePath xkg-desktop-bundle\START-SERVER.bat -Encoding ASCII
-        "@`n@echo off`nstart `"`" xkg_mobile.exe`necho XKG App launched!`npause`n"@ | Out-File -FilePath xkg-desktop-bundle\START-APP.bat -Encoding ASCII
-        "@`nXKG Desktop Bundle`n==================`n1. START-SERVER.bat`n2. START-APP.bat`n3. App connects to http://localhost:18050`n"@ | Out-File -FilePath xkg-desktop-bundle\README.txt -Encoding ASCII
+        "@`n@echo off`nstart `"`" XKnowledgeGraphServer.exe`necho Started on port 18050`npause`n"@ | Out-File -FilePath xkg-desktop-bundle\START-SERVER.bat -Encoding ASCII
+        "@`n@echo off`nstart `"`" xkg_mobile.exe`npause`n"@ | Out-File -FilePath xkg-desktop-bundle\START-APP.bat -Encoding ASCII
+        "@`nXKG Desktop`n1. START-SERVER.bat`n2. START-APP.bat`n"@ | Out-File -FilePath xkg-desktop-bundle\README.txt -Encoding ASCII
         
-        Write-Host "Bundle:"
-        Get-ChildItem xkg-desktop-bundle | Format-Table Name, @{N='Size(MB)';E={[math]::Round($_.Length/1MB,2)}} -AutoSize
+        Get-ChildItem xkg-desktop-bundle | Format-Table Name, @{N='MB';E={[math]::Round($_.Length/1MB,2)}} -AutoSize
     
     - name: Upload bundle
       uses: actions/upload-artifact@v4
