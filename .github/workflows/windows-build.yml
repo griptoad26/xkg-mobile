@@ -1,0 +1,26 @@
+name: Build Windows
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - uses: subosito/flutter-action@v2
+      with:
+        flutter-version: '3.24.5'
+    
+    - name: Build
+      run: |
+        flutter pub get
+        flutter build windows --release
+    
+    - name: Upload exe
+      uses: actions/upload-artifact@v4
+      with:
+        name: xkg_mobile-windows
+        path: build/windows/x64/release/bundle/xkg_mobile.exe
