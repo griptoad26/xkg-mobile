@@ -157,7 +157,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             decoration: BoxDecoration(
               color: const Color(0xFF1E1E2E),
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.blue.withValues(alpha: 0.3)),
+              border: Border.all(color: Colors.blue.withOpacity(0.3)),
             ),
             child: const Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -194,7 +194,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             decoration: BoxDecoration(
               color: const Color(0xFF1E1E2E),
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.green.withValues(alpha: 0.3)),
+              border: Border.all(color: Colors.green.withOpacity(0.3)),
             ),
             child: const Column(
               crossAxisAlignment: CrossAxisAlignment.start,
