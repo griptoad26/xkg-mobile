@@ -13,7 +13,7 @@ jobs:
     runs-on: windows-latest
     
     steps:
-    - name: Checkout XKG Mobile (with xkg-server included)
+    - name: Checkout XKG Mobile
       uses: actions/checkout@v4
       with:
         path: xkg-mobile
@@ -42,35 +42,39 @@ jobs:
     - name: Build XKG Server EXE
       shell: pwsh
       run: |
-        Set-Location xkg-mobile\xkg-server
+        $repoRoot = "D:\a\xkg-mobile\xkg-mobile\xkg-mobile"
+        Set-Location "$repoRoot\xkg-mobile\xkg-server"
         if (!(Test-Path "start_waitress.py")) {
-            Write-Host "ERROR: start_waitress.py not found"
+            Write-Host "ERROR: start_waitress.py not found at $(Get-Location)"
             exit 1
         }
         Write-Host "Building XKG Server..."
         pyinstaller --onefile --name XKnowledgeGraphServer --hidden-import flask --hidden-import flask_cors --hidden-import waitress --hidden-import werkzeug --hidden-import jinja2 --hidden-import markupsafe --hidden-import networkx --hidden-import pandas --hidden-import numpy --hidden-import requests start_waitress.py
-        Set-Location ..
-        if (Test-Path "xkg-mobile\xkg-server\dist\XKnowledgeGraphServer.exe") {
-            $size = [math]::Round((Get-Item "xkg-mobile\xkg-server\dist\XKnowledgeGraphServer.exe").Length / 1MB, 1)
+        Set-Location $repoRoot
+        $exePath = "xkg-mobile\xkg-server\dist\XKnowledgeGraphServer.exe"
+        if (Test-Path $exePath) {
+            $size = [math]::Round((Get-Item $exePath).Length / 1MB, 1)
             Write-Host "Server EXE built: ${size}MB"
         } else {
-            Write-Host "ERROR: Server exe not found"
+            Write-Host "ERROR: Server exe not found at $exePath"
+            Get-ChildItem "xkg-mobile\xkg-server\dist" -ErrorAction SilentlyContinue
             exit 1
         }
     
     - name: Package Bundle
       shell: pwsh
       run: |
-        New-Item -ItemType Directory -Force -Path xkg-desktop-bundle | Out-Null
-        Get-ChildItem xkg-mobile/build/windows/x64/runner/Release -Recurse -ErrorAction SilentlyContinue | Copy-Item -Destination xkg-desktop-bundle\ -ErrorAction SilentlyContinue
-        Copy-Item "xkg-mobile\xkg-server\dist\XKnowledgeGraphServer.exe" xkg-desktop-bundle\
-        Copy-Item "xkg-mobile\xkg-server\start_waitress.py" xkg-desktop-bundle\
+        $repoRoot = "D:\a\xkg-mobile\xkg-mobile\xkg-mobile"
+        New-Item -ItemType Directory -Force -Path "$repoRoot\xkg-desktop-bundle" | Out-Null
+        Get-ChildItem "$repoRoot\xkg-mobile\build\windows\x64\runner\Release" -Recurse -ErrorAction SilentlyContinue | Copy-Item -Destination "$repoRoot\xkg-desktop-bundle\" -ErrorAction SilentlyContinue
+        Copy-Item "$repoRoot\xkg-mobile\xkg-server\dist\XKnowledgeGraphServer.exe" "$repoRoot\xkg-desktop-bundle\"
+        Copy-Item "$repoRoot\xkg-mobile\xkg-server\start_waitress.py" "$repoRoot\xkg-desktop-bundle\"
         
-        "@`n@echo off`nstart `"`" XKnowledgeGraphServer.exe`necho XKG Server running on port 18050`npause`n"@ | Out-File -FilePath xkg-desktop-bundle\START-SERVER.bat -Encoding ASCII
-        "@`n@echo off`nstart `"`" xkg_mobile.exe`npause`n"@ | Out-File -FilePath xkg-desktop-bundle\START-APP.bat -Encoding ASCII
-        "@`nXKG Desktop Bundle`n=================`n1. START-SERVER.bat`n2. START-APP.bat`n"@ | Out-File -FilePath xkg-desktop-bundle\README.txt -Encoding ASCII
+        "@`n@echo off`nstart XKnowledgeGraphServer.exe`npause`n"@ | Out-File -FilePath "$repoRoot\xkg-desktop-bundle\START-SERVER.bat" -Encoding ASCII
+        "@`n@echo off`nstart xkg_mobile.exe`npause`n"@ | Out-File -FilePath "$repoRoot\xkg-desktop-bundle\START-APP.bat" -Encoding ASCII
+        "@`nXKG Desktop`n1. START-SERVER.bat`n2. START-APP.bat`n"@ | Out-File -FilePath "$repoRoot\xkg-desktop-bundle\README.txt" -Encoding ASCII
         
-        Get-ChildItem xkg-desktop-bundle | Format-Table Name, @{N='MB';E={[math]::Round($_.Length/1MB,2)}} -AutoSize
+        Get-ChildItem "$repoRoot\xkg-desktop-bundle" | Format-Table Name, @{N='MB';E={[math]::Round($_.Length/1MB,2)}} -AutoSize
     
     - name: Upload bundle
       uses: actions/upload-artifact@v4
