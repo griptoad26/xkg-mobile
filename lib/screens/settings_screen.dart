@@ -21,7 +21,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   void _loadSettings() {
     final settings = Hive.box('settings');
-    _endpointController.text = settings.get('xkgEndpoint', defaultValue: 'http://100.92.247.46:5000');
+    _endpointController.text = settings.get('xkgEndpoint', defaultValue: 'http://localhost:18050');
     _openclawController.text = settings.get('openclawEndpoint', defaultValue: 'http://127.0.0.1:18789');
   }
 
@@ -180,7 +180,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   '1. Install Tailscale on your phone\n'
                   '2. Make sure your phone and computer are on the same Tailscale network\n'
                   '3. Enter your Tailscale IP (e.g., http://100.x.x.x:5000)\n'
-                  '4. Example: http://100.92.247.46:5000',
+                  '4. Example: http://localhost:18050',
                   style: TextStyle(fontSize: 13, color: Colors.grey),
                 ),
               ],

@@ -1,0 +1,143 @@
+name: Build XKG Windows Desktop (Unified Bundle)
+
+on:
+  workflow_dispatch:
+    inputs:
+      xkg_server_ref:
+        description: 'XKG Server git ref (branch/commit)'
+        required: false
+        default: 'main'
+
+jobs:
+  build:
+    runs-on: windows-latest
+    
+    steps:
+    - name: Checkout XKG Mobile repo
+      uses: actions/checkout@v4
+    
+    - name: Checkout XKG Server repo
+      uses: actions/checkout@v4
+      with:
+        repository: griptoad26/x-knowledge-graph
+        path: xkg-server
+        ref: ${{ inputs.xkg_server_ref || 'main' }}
+    
+    - name: Setup Flutter
+      uses: subosito/flutter-action@v2
+      with:
+        flutter-version: '3.24.5'
+    
+    - name: Setup Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+        cache: 'pip'
+    
+    - name: Install Flutter deps
+      run: |
+        flutter pub get
+    
+    - name: Install Python deps (for server build)
+      run: |
+        pip install flask flask-cors waitress pyinstaller networkx pandas numpy
+    
+    - name: Build Flutter Windows App
+      run: |
+        flutter build windows --release
+      env:
+        FLUTTER_ROOT: C:\flutter
+    
+    - name: Build XKG Server (PyInstaller)
+      run: |
+        pip install flask flask-cors waitress requests networkx pandas numpy
+        pyinstaller --onefile --name XKnowledgeGraphServer ^
+          --add-data "frontend;frontend" ^
+          --add-data "core;core" ^
+          --hidden-import flask ^
+          --hidden-import flask_cors ^
+          --hidden-import waitress ^
+          --hidden-import werkzeug ^
+          --hidden-import jinja2 ^
+          --hidden-import markupsafe ^
+          --hidden-import networkx ^
+          --hidden-import pandas ^
+          --hidden-import numpy ^
+          start_waitress.py
+      working-directory: xkg-server
+      continue-on-error: true
+    
+    - name: Package everything
+      shell: bash
+      run: |
+        mkdir -p xkg-desktop-bundle
+        # Copy Flutter build
+        cp -r build/windows/x64/runner/Release/* xkg-desktop-bundle/ 2>/dev/null || true
+        # Copy server exe if it exists
+        cp xkg-server/dist/XKnowledgeGraphServer.exe xkg-desktop-bundle/ 2>/dev/null || true
+        # Copy server source as fallback
+        cp xkg-server/start_waitress.py xkg-desktop-bundle/ 2>/dev/null || true
+        # Copy startup scripts
+        cat > xkg-desktop-bundle/START-HERE.bat << 'EOF'
+        @echo off
+        echo ========================================
+        echo   XKG Desktop - Knowledge Graph
+        echo ========================================
+        echo.
+        echo Starting XKG Server on port 18050...
+        echo Then launch the app.
+        echo.
+        echo If server .exe exists, run it. Otherwise:
+        echo   pip install flask flask-cors waitress
+        echo   python start_waitress.py
+        echo.
+        pause
+        EOF
+        cat > xkg-desktop-bundle/start-server.bat << 'EOF'
+        @echo off
+        echo Starting XKG Server on port 18050...
+        if exist "XKnowledgeGraphServer.exe" (
+            start "" XKnowledgeGraphServer.exe
+            echo Server started!
+        ) else (
+            echo XKnowledgeGraphServer.exe not found.
+            echo Make sure Python is installed and run:
+            echo   pip install flask flask-cors waitress
+            echo   python start_waitress.py
+        )
+        pause
+        EOF
+        cat > xkg-desktop-bundle/start-app.bat << 'EOF'
+        @echo off
+        echo Launching XKG App...
+        if exist "xkg_mobile.exe" (
+            start "" xkg_mobile.exe
+            echo App launched!
+        ) else (
+            echo Error: xkg_mobile.exe not found!
+        )
+        pause
+        EOF
+        cat > xkg-desktop-bundle/README.txt << 'EOF'
+        XKG Desktop - Quick Start
+        =========================
+        1. Run start-server.bat to start the XKG knowledge graph server
+        2. Run start-app.bat to launch the XKG desktop app
+        3. The app will connect to the server at localhost:18050
+        
+        Requirements:
+        - Windows 10/11
+        - If server doesn't start, install Python 3.11+ and run:
+          pip install flask flask-cors waitress networkx pandas numpy
+        EOF
+        echo.
+        echo Bundle contents:
+        ls -la xkg-desktop-bundle/
+        du -sh xkg-desktop-bundle/
+    
+    - name: Upload bundle
+      uses: actions/upload-artifact@v4
+      with:
+        name: xkg-desktop-bundle
+        path: xkg-desktop-bundle/**
+        retention-days: 30
