@@ -24,6 +24,7 @@ jobs:
     
     - name: Setup Python
       uses: actions/setup-python@v5
+      continue-on-error: true
       with:
         python-version: '3.11'
         cache: 'pip'
@@ -34,7 +35,7 @@ jobs:
     
     - name: Install Python deps
       run: |
-        pip install flask flask-cors waitress pyinstaller networkx pandas numpy requests
+        pip install --timeout=120 flask flask-cors waitress pyinstaller networkx pandas numpy requests
     
     - name: Build Flutter Windows
       run: |
@@ -44,7 +45,7 @@ jobs:
     
     - name: Build XKG Server EXE
       run: |
-        pip install flask flask-cors waitress requests networkx pandas numpy
+        pip install --timeout=120 flask flask-cors waitress requests networkx pandas numpy
         if exist "xkg-server" (
           cd xkg-server
           pyinstaller --onefile --name XKnowledgeGraphServer ^
@@ -91,7 +92,7 @@ jobs:
             echo XKG Server started on port 18050
         ) else (
             echo XKG Server exe not found. Install Python and run:
-            echo   pip install flask flask-cors waitress networkx pandas numpy
+            echo   pip install --timeout=120 flask flask-cors waitress networkx pandas numpy
             echo   python start_waitress.py
         )
         pause
