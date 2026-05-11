@@ -16,19 +16,25 @@ jobs:
       uses: actions/checkout@v4
     
     - name: Download XKG Server
+      shell: pwsh
       run: |
         curl -sL https://github.com/griptoad26/x-knowledge-graph/archive/refs/heads/main.zip -o server.zip
-        powershell -Command "Expand-Archive -Path server.zip -DestinationPath . -Force"
-        $dir = Get-ChildItem -Directory | Where-Object { $_.Name -match 'x-knowledge-graph' } | Select-Object -First 1
-        if ($dir) { Rename-Item $dir.Name -NewName xkg-server -Force }
-        if (!(Test-Path "xkg-server\start_waitress.py")) {
-          Write-Host "ERROR: xkg-server not downloaded properly"
-          Get-ChildItem
-          exit 1
+        Write-Host "Extracting..."
+        Expand-Archive -Path server.zip -DestinationPath . -Force
+        Write-Host "After extract:"
+        Get-ChildItem | Select-Object Name, PSIsContainer
+        $dir = Get-ChildItem -Directory | Where-Object { $_.Name -ne 'xkg-mobile' -and $_.Name -ne 'build' -and $_.Name -ne 'xkg-desktop-bundle' } | Select-Object -First 1
+        if ($dir) {
+            Write-Host "Renaming $($dir.Name) to xkg-server"
+            Rename-Item $dir.Name xkg-server -Force
         }
-        Write-Host "XKG Server downloaded successfully"
-        Get-ChildItem xkg-server
-      shell: pwsh
+        if (Test-Path "xkg-server\start_waitress.py") {
+            Write-Host "SUCCESS: xkg-server ready"
+            Get-ChildItem xkg-server | Select-Object Name
+        } else {
+            Write-Host "ERROR: start_waitress.py not found"
+            exit 1
+        }
     
     - name: Setup Flutter
       uses: subosito/flutter-action@v2
@@ -55,58 +61,29 @@ jobs:
             Write-Host "ERROR: xkg-server not found"
             exit 1
         }
-        Write-Host "Building XKG Server with PyInstaller..."
+        Write-Host "Building XKG Server..."
         Set-Location xkg-server
-        pyinstaller --onefile --name XKnowledgeGraphServer `
-          --hidden-import flask --hidden-import flask_cors --hidden-import waitress `
-          --hidden-import werkzeug --hidden-import jinja2 --hidden-import markupsafe `
-          --hidden-import networkx --hidden-import pandas --hidden-import numpy `
-          --hidden-import requests start_waitress.py
+        pyinstaller --onefile --name XKnowledgeGraphServer --hidden-import flask --hidden-import flask_cors --hidden-import waitress --hidden-import werkzeug --hidden-import jinja2 --hidden-import markupsafe --hidden-import networkx --hidden-import pandas --hidden-import numpy --hidden-import requests start_waitress.py
         Set-Location ..
         if (!(Test-Path "xkg-server\dist\XKnowledgeGraphServer.exe")) {
-            Write-Host "ERROR: XKnowledgeGraphServer.exe was not created"
-            Get-ChildItem xkg-server\dist
+            Write-Host "ERROR: Server exe not created"
             exit 1
         }
-        Write-Host "Server EXE built: $(Get-ChildItem xkg-server\dist\XKnowledgeGraphServer.exe | Select-Object Length)"
+        Write-Host "Server EXE built successfully"
     
     - name: Package Bundle
       shell: pwsh
       run: |
         New-Item -ItemType Directory -Force -Path xkg-desktop-bundle | Out-Null
-        
-        # Copy Flutter build
         Get-ChildItem build/windows/x64/runner/Release -Recurse -ErrorAction SilentlyContinue | Copy-Item -Destination xkg-desktop-bundle\ -ErrorAction SilentlyContinue
-        
-        # Must have server EXE - this step validates that
-        if (!(Test-Path "xkg-server\dist\XKnowledgeGraphServer.exe")) {
-            Write-Host "ERROR: No server exe, cannot create bundle"
-            exit 1
-        }
         Copy-Item "xkg-server\dist\XKnowledgeGraphServer.exe" xkg-desktop-bundle\
         Copy-Item "xkg-server\start_waitress.py" xkg-desktop-bundle\
         
-        @"
-        @echo off
-        start "" XKnowledgeGraphServer.exe
-        echo XKG Server started on port 18050
-        pause
-        "@ | Out-File -FilePath xkg-desktop-bundle\START-SERVER.bat -Encoding ASCII
+        "@`n@echo off`nstart `"`" XKnowledgeGraphServer.exe`necho XKG Server started on port 18050`npause`n"@ | Out-File -FilePath xkg-desktop-bundle\START-SERVER.bat -Encoding ASCII
+        "@`n@echo off`nstart `"`" xkg_mobile.exe`necho XKG App launched!`npause`n"@ | Out-File -FilePath xkg-desktop-bundle\START-APP.bat -Encoding ASCII
+        "@`nXKG Desktop Bundle`n==================`n1. START-SERVER.bat`n2. START-APP.bat`n3. App connects to http://localhost:18050`n"@ | Out-File -FilePath xkg-desktop-bundle\README.txt -Encoding ASCII
         
-        "@echo off
-        start "" xkg_mobile.exe
-        echo XKG App launched!
-        pause" | Out-File -FilePath xkg-desktop-bundle\START-APP.bat -Encoding ASCII
-        
-        @"
-        XKG Desktop Bundle
-        ==================
-        1. Run START-SERVER.bat - starts server on port 18050
-        2. Run START-APP.bat - launches the XKG app
-        3. App connects to server at http://localhost:18050
-        "@ | Out-File -FilePath xkg-desktop-bundle\README.txt -Encoding ASCII
-        
-        Write-Host "Bundle contents:"
+        Write-Host "Bundle:"
         Get-ChildItem xkg-desktop-bundle | Format-Table Name, @{N='Size(MB)';E={[math]::Round($_.Length/1MB,2)}} -AutoSize
     
     - name: Upload bundle
