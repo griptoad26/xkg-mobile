@@ -10,33 +10,44 @@ on:
 jobs:
   build:
     runs-on: windows-latest
+    permissions:
+      contents: read
     
     steps:
     - name: Checkout XKG Mobile repo
       uses: actions/checkout@v4
-      with:
-        fetch-depth: 1
     
-    - name: Download and extract XKG Server
+    - name: Download XKG Server (private repo - use GITHUB_TOKEN)
       shell: pwsh
       run: |
-        curl -sL https://github.com/griptoad26/x-knowledge-graph/archive/refs/heads/main.zip -o server.zip -o server.zip
-        Expand-Archive -Path server.zip -DestinationPath . -Force
-        # Find the extracted directory (matches x-knowledge-graph*)
-        $matches = Get-ChildItem -Directory | Where-Object { $_.Name -match '^x-knowledge-graph' }
-        if ($matches) {
-            $dir = $matches | Select-Object -First 1
-            Write-Host "Found: $($dir.Name)"
+        $headers = @{
+          "Authorization" = "Bearer $env:GITHUB_TOKEN"
+          "Accept" = "application/vnd.github+json"
+          "X-GitHub-Api-Version" = "2022-11-28"
+        }
+        Write-Host "Downloading XKG Server tarball..."
+        $tarballUrl = "https://api.github.com/repos/griptoad26/x-knowledge-graph/tarball/main"
+        $resp = Invoke-WebRequest -Uri $tarballUrl -Headers $headers -UseBasicParsing
+        [System.IO.File]::WriteAllBytes("server.tar.gz", $resp.Content)
+        Write-Host "Downloaded: $([math]::Round($resp.Content.Length / 1MB, 1))MB"
+        Write-Host "Extracting..."
+        Expand-Archive -Path server.tar.gz -DestinationPath . -Force
+        # Find the extracted directory
+        $dirs = Get-ChildItem -Directory | Where-Object { $_.Name -match 'x-knowledge-graph' }
+        if ($dirs) {
+            $dir = $dirs | Select-Object -First 1
+            Write-Host "Found directory: $($dir.Name)"
             Move-Item $dir.Name xkg-server -Force
         }
-        # Verify
         if (Test-Path "xkg-server\start_waitress.py") {
-            Write-Host "XKG Server ready: $(Get-ChildItem xkg-server | Select-Object -First 3 | ForEach-Object { $_.Name })"
+            Write-Host "SUCCESS: xkg-server ready"
         } else {
             Write-Host "ERROR: xkg-server not ready"
-            Write-Host "Current dirs: $(Get-ChildItem -Directory | ForEach-Object { $_.Name } | Out-String)"
+            Get-ChildItem -Directory | ForEach-Object { Write-Host "Dir: $($_.Name)" }
             exit 1
         }
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     
     - name: Setup Flutter
       uses: subosito/flutter-action@v2
@@ -72,7 +83,6 @@ jobs:
             Write-Host "Server EXE built: ${size}MB"
         } else {
             Write-Host "ERROR: Server exe not found"
-            Get-ChildItem xkg-server\dist -ErrorAction SilentlyContinue
             exit 1
         }
     
