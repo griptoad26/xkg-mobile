@@ -1,0 +1,30 @@
+# X Knowledge Graph Dependencies
+
+# Core
+networkx>=3.0
+pandas>=2.0
+numpy>=1.24
+
+# Web UI (Flask)
+flask>=2.3
+flask-cors>=4.0
+
+# Windows EXE build
+pyinstaller>=6.0
+
+# Semantic Search (optional - for enhanced search)
+sentence-transformers>=2.2
+faiss-cpu>=1.7
+
+# Optional: For enhanced NLP (uncomment if needed)
+# transformers>=4.30
+# torch>=2.0
+# spacy>=3.6
+
+# Optional: For visualization
+# pyvis>=0.3
+
+# Standard library (no install needed)
+# json, re, sqlite3, dataclasses, tkinter, threading, pathlib
+# Neo4j
+neo4j>=5.0.0

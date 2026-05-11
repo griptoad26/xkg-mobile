@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>XKG Grok Conversations — Visual Feed</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0f0f1a; color: #e0e0e0; padding: 1rem 2rem 4rem; }
+  
+  /* Top bar */
+  .topbar { display: flex; justify-content: space-between; align-items: center; padding: 1rem 0; border-bottom: 1px solid #2d2d4a; margin-bottom: 2rem; position: sticky; top: 0; background: #0f0f1a; z-index: 100; }
+  h1 { color: #8b5cf6; font-size: 1.5rem; }
+  .controls { display: flex; gap: 1rem; align-items: center; }
+  input, select { background: #1a1a2e; border: 1px solid #2d2d4a; color: #e0e0e0; padding: 0.5rem 0.75rem; border-radius: 8px; font-size: 0.9rem; }
+  input { width: 250px; }
+  .live-dot { display: inline-block; width: 8px; height: 8px; background: #34d399; border-radius: 50%; margin-right: 0.5rem; animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.5; } }
+  .count-badge { background: #1a1a2e; border: 1px solid #2d2d4a; border-radius: 20px; padding: 0.2rem 0.75rem; font-size: 0.8rem; color: #8b5cf6; }
+  
+  /* Search/filter */
+  .filter-row { display: flex; gap: 0.75rem; margin-bottom: 1.5rem; flex-wrap: wrap; }
+  .filter-btn { background: #1a1a2e; border: 1px solid #2d2d4a; color: #9ca3af; padding: 0.4rem 0.8rem; border-radius: 20px; font-size: 0.8rem; cursor: pointer; transition: all 0.2s; }
+  .filter-btn:hover, .filter-btn.active { background: #4c1d95; color: #e0e0e0; border-color: #8b5cf6; }
+  
+  /* Conversation cards */
+  .conv-card { background: #1a1a2e; border: 1px solid #2d2d4a; border-radius: 12px; margin-bottom: 1.5rem; overflow: hidden; }
+  .conv-header { padding: 1rem 1.25rem; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #252540; }
+  .conv-date { color: #6b7280; font-size: 0.8rem; }
+  .conv-id { color: #4b5563; font-size: 0.7rem; font-family: monospace; }
+  .conv-body { padding: 1rem 1.25rem; }
+  
+  /* Chat messages */
+  .message { margin-bottom: 1rem; border-radius: 8px; padding: 0.75rem 1rem; }
+  .message:last-child { margin-bottom: 0; }
+  .msg-user { background: #1e3a5f; border-left: 3px solid #3b82f6; }
+  .msg-agent { background: #2d1b4e; border-left: 3px solid #8b5cf6; }
+  .msg-label { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; margin-bottom: 0.4rem; letter-spacing: 0.05em; }
+  .msg-user .msg-label { color: #60a5fa; }
+  .msg-agent .msg-label { color: #a78bfa; }
+  .msg-text { font-size: 0.9rem; line-height: 1.6; color: #e0e0e0; }
+  .msg-text p { margin-bottom: 0.5rem; }
+  .msg-text p:last-child { margin-bottom: 0; }
+  .msg-text strong { color: #f0f0f0; }
+  .msg-text code { background: #0f0f1a; padding: 0.1rem 0.3rem; border-radius: 4px; font-size: 0.85em; }
+  .msg-text pre { background: #0f0f1a; padding: 0.75rem; border-radius: 6px; overflow-x: auto; margin: 0.5rem 0; }
+  
+  /* Expand/collapse */
+  .expand-btn { background: none; border: none; color: #6b7280; cursor: pointer; font-size: 0.8rem; padding: 0.25rem 0.5rem; border-radius: 4px; }
+  .expand-btn:hover { background: #252540; color: #e0e0e0; }
+  .conv-body.collapsed .message:nth-child(n+4) { display: none; }
+  .conv-body.collapsed .message:nth-child(3):after { content: '... '; color: #6b7280; }
+  .show-more { color: #8b5cf6; font-size: 0.8rem; padding: 0.5rem; text-align: center; cursor: pointer; }
+  .show-more:hover { color: #a78bfa; }
+  
+  /* Tags */
+  .topic-tag { display: inline-block; background: #065f46; color: #34d399; padding: 0.15rem 0.5rem; border-radius: 12px; font-size: 0.7rem; margin-right: 0.4rem; margin-bottom: 0.5rem; }
+  
+  /* Action items */
+  .action-item { background: #78350f; border-radius: 6px; padding: 0.5rem 0.75rem; margin: 0.5rem 0; font-size: 0.85rem; display: flex; align-items: flex-start; gap: 0.5rem; }
+  .action-icon { color: #fbbf24; font-size: 1rem; }
+  
+  /* Stats bar */
+  .stats-bar { display: flex; gap: 2rem; padding: 1rem; background: #1a1a2e; border-radius: 10px; margin-bottom: 1.5rem; }
+  .stat-item { text-align: center; }
+  .stat-num { font-size: 1.5rem; font-weight: 800; color: #8b5cf6; }
+  .stat-label { font-size: 0.75rem; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; }
+  
+  /* No results */
+  .no-results { text-align: center; padding: 3rem; color: #6b7280; }
+  
+  /* Loading */
+  .loading { text-align: center; padding: 2rem; color: #6b7280; }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div style="display:flex;align-items:center;gap:1rem;">
+    <h1>💬 XKG Grok Conversations</h1>
+    <span class="live-dot"></span><span style="color:#6b7280;font-size:0.8rem;">Live</span>
+  </div>
+  <div class="controls">
+    <span class="count-badge" id="countBadge">527 conversations</span>
+    <input type="text" id="searchInput" placeholder="Search conversations..." oninput="filterConversations()">
+    <select id="sortSelect" onchange="sortConversations()">
+      <option value="newest">Newest First</option>
+      <option value="oldest">Oldest First</option>
+    </select>
+  </div>
+</div>
+
+<div class="stats-bar">
+  <div class="stat-item"><div class="stat-num" id="totalCount">527</div><div class="stat-label">Total</div></div>
+  <div class="stat-item"><div class="stat-num" id="filteredCount">527</div><div class="stat-label">Showing</div></div>
+  <div class="stat-item"><div class="stat-num" id="dateRange">—</div><div class="stat-label">Date Range</div></div>
+</div>
+
+<div class="filter-row">
+  <span class="filter-btn active" onclick="setFilter('all')">All</span>
+  <span class="filter-btn" onclick="setFilter('action')">With Actions</span>
+  <span class="filter-btn" onclick="setFilter('code')">Code/Tech</span>
+  <span class="filter-btn" onclick="setFilter('business')">Business</span>
+  <span class="filter-btn" onclick="setFilter('creative')">Creative</span>
+</div>
+
+<div id="conversationList">
+  <div class="loading">Loading conversations...</div>
+</div>
+
+<script>
+let conversations = [];
+let currentFilter = 'all';
+let searchTerm = '';
+
+const actionKeywords = ['todo', 'fix', 'build', 'create', 'update', 'write', 'check', 'review', 'deploy', 'test', 'implement', 'add', 'make'];
+const codeKeywords = ['python', 'code', 'function', 'api', 'script', 'docker', 'linux', 'sql', 'git', 'react', 'flutter', 'api', 'debug', 'server', 'database'];
+const businessKeywords = ['revenue', 'pricing', 'customer', 'sales', 'marketing', 'product', 'strategy', 'launch', 'business', 'profit', 'cost'];
+const creativeKeywords = ['design', 'creative', 'write', 'story', 'content', 'video', 'image', 'art', 'logo', 'brand'];
+
+function parseMarkdown(text) {
+  if (!text) return '';
+  let html = text
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.+?)\*/g, '<em>$1</em>')
+    .replace(/`(.+?)`/g, '<code>$1</code>')
+    .replace(/^### (.+)$/gm, '<h4>$1</h4>')
+    .replace(/^## (.+)$/gm, '<h3>$1</h3>')
+    .replace(/^# (.+)$/gm, '<h2>$1</h2>')
+    .replace(/^- (.+)$/gm, '<li>$1</li>')
+    .replace(/\n\n/g, '</p><p>')
+    .replace(/\n/g, '<br>');
+  return '<p>' + html + '</p>';
+}
+
+function parseConversation(text) {
+  const parts = text.split(/\[Agent\]:/);
+  const messages = [];
+  for (let i = 0; i < parts.length; i++) {
+    const isAgent = i > 0;
+    const label = isAgent ? 'Agent (Grok)' : 'User';
+    const content = isAgent ? parts[i] : parts[i].replace(/\[User\]:\s*/, '');
+    if (content.trim()) {
+      messages.push({ role: isAgent ? 'agent' : 'user', text: content.trim() });
+    }
+  }
+  return messages;
+}
+
+function hasActions(text) {
+  return actionKeywords.some(k => text.toLowerCase().includes(k));
+}
+
+function detectCategory(text) {
+  const lower = text.toLowerCase();
+  if (codeKeywords.some(k => lower.includes(k))) return 'code';
+  if (businessKeywords.some(k => lower.includes(k))) return 'business';
+  if (creativeKeywords.some(k => lower.includes(k))) return 'creative';
+  return 'general';
+}
+
+function getPreview(text) {
+  const msgs = parseConversation(text);
+  if (msgs.length === 0) return '';
+  return msgs[0].text.substring(0, 120) + (msgs[0].text.length > 120 ? '...' : '');
+}
+
+function formatDate(iso) {
+  if (!iso) return '';
+  const d = new Date(iso);
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+}
+
+function renderConversations() {
+  let filtered = conversations;
+  
+  if (currentFilter !== 'all') {
+    filtered = filtered.filter(c => {
+      const cat = detectCategory(c.text);
+      if (currentFilter === 'action') return hasActions(c.text);
+      return cat === currentFilter;
+    });
+  }
+  
+  if (searchTerm) {
+    const term = searchTerm.toLowerCase();
+    filtered = filtered.filter(c => c.text.toLowerCase().includes(term) || c.id.includes(term));
+  }
+  
+  document.getElementById('filteredCount').textContent = filtered.length;
+  document.getElementById('countBadge').textContent = filtered.length + ' conversations';
+  
+  const list = document.getElementById('conversationList');
+  
+  if (filtered.length === 0) {
+    list.innerHTML = '<div class="no-results">No conversations match your search</div>';
+    return;
+  }
+  
+  list.innerHTML = filtered.map(c => {
+    const msgs = parseConversation(c.text);
+    const category = detectCategory(c.text);
+    const hasAct = hasActions(c.text);
+    
+    return `<div class="conv-card">
+      <div class="conv-header">
+        <div>
+          <span class="conv-date">${formatDate(c.created_at)}</span>
+          <span class="topic-tag">${category}</span>
+          ${hasAct ? '<span class="topic-tag" style="background:#78350f;color:#fbbf24;">action</span>' : ''}
+        </div>
+        <span class="conv-id">${c.id}</span>
+      </div>
+      <div class="conv-body">
+        ${msgs.map(m => `<div class="message msg-${m.role}">
+          <div class="msg-label">${m.role === 'agent' ? '🤖 Agent' : '👤 User'}</div>
+          <div class="msg-text">${parseMarkdown(m.text)}</div>
+        </div>`).join('')}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function setFilter(f) {
+  currentFilter = f;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  event.target.classList.add('active');
+  renderConversations();
+}
+
+function filterConversations() {
+  searchTerm = document.getElementById('searchInput').value;
+  renderConversations();
+}
+
+function sortConversations() {
+  const sort = document.getElementById('sortSelect').value;
+  if (sort === 'oldest') {
+    conversations.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+  } else {
+    conversations.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+  }
+  renderConversations();
+}
+
+// Load from API (proxied via XKG server at port 18050)
+async function loadConversations() {
+  try {
+    // Use relative URL — XKG server serves this HTML
+    const resp = await fetch('api/posts');
+    conversations = await resp.json();
+    sortConversations();
+    renderConversations();
+    
+    if (conversations.length > 0) {
+      document.getElementById('totalCount').textContent = conversations.length;
+      const dates = conversations.map(c => new Date(c.created_at));
+      const earliest = new Date(Math.min(...dates));
+      const latest = new Date(Math.max(...dates));
+      document.getElementById('dateRange').textContent = 
+        earliest.toLocaleDateString('en-US', {month:'short',day:'numeric'}) + ' — ' + 
+        latest.toLocaleDateString('en-US', {month:'short',day:'numeric'});
+    }
+  } catch (e) {
+    document.getElementById('conversationList').innerHTML = 
+      '<div class="no-results">Could not load conversations. Is XKG server running?</div>';
+  }
+}
+
+loadConversations();
+</script>
+</body>
+</html>

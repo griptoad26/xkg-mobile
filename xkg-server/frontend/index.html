@@ -1,0 +1,3979 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>X Knowledge Graph v0.4.51</title>
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <link rel="stylesheet" href="css/layouts.css">
+    <!-- PDF Export Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <!-- Cytoscape.js for Knowledge Graph Visualization -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.28.1/cytoscape.min.js"></script>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="header">
+            <div class="logo">X Knowledge Graph <span>v0.4.51</span></div>
+            <div class="header-actions">
+                <button id="theme-toggle" class="btn btn-theme" onclick="toggleTheme()" aria-label="Toggle theme" title="Switch to light/dark theme">
+                    <span id="theme-icon" aria-hidden="true">🌙</span>
+                </button>
+                <button class="btn btn-secondary" onclick="showHelp()">Help</button>
+                <button class="btn btn-secondary" onclick="showSettings()">Settings</button>
+                <div class="export-dropdown">
+    <button class="btn btn-primary" onclick="toggleExportMenu()">Export ▾</button>
+    <div class="export-menu" id="export-menu">
+        <div class="export-menu-item" onclick="exportJSON()">
+            <span class="export-icon">📄</span>
+            <span>Export as JSON</span>
+        </div>
+        <div class="export-menu-item" onclick="exportPDF()">
+            <span class="export-icon">📑</span>
+            <span>Export as PDF</span>
+        </div>
+    </div>
+</div>
+            </div>
+        </header>
+        
+        <!-- Settings Panel -->
+        <div id="settings-panel" style="display:none;position:fixed;top:0;right:0;width:400px;height:100%;background:#1c1f23;z-index:1000;padding:20px;overflow-y:auto;box-shadow:-2px 0 10px rgba(0,0,0,0.3);">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+                <h2 style="color:#fff;margin:0;">Settings</h2>
+                <button onclick="showSettings()" style="background:none;border:none;color:#71767b;font-size:24px;cursor:pointer;">×</button>
+            </div>
+            <div style="color:#fff;">
+                <h3 style="color:#1d9bf0;margin-top:20px;">Data Files</h3>
+                <div style="background:#2a2d31;padding:12px;border-radius:8px;margin:10px 0;">
+                    <div style="color:#71767b;font-size:12px;margin-bottom:4px;">Data Directory</div>
+                    <div style="color:#1d9bf0;font-size:12px;word-break:break-all;">C:\Users\Administrator\.openclaw\workspace\xkg_test\data</div>
+                </div>
+                <div style="background:#2a2d31;padding:12px;border-radius:8px;margin:10px 0;">
+                    <div style="color:#71767b;font-size:12px;margin-bottom:4px;">tweets.json</div>
+                    <div style="color:#71767b;font-size:11px;">5,888 tweets</div>
+                </div>
+                <div style="background:#2a2d31;padding:12px;border-radius:8px;margin:10px 0;">
+                    <div style="color:#71767b;font-size:12px;margin-bottom:4px;">likes.json</div>
+                    <div style="color:#71767b;font-size:11px;">19,677 likes</div>
+                </div>
+                <div style="background:#2a2d31;padding:12px;border-radius:8px;margin:10px 0;">
+                    <div style="color:#71767b;font-size:12px;margin-bottom:4px;">conversations.json</div>
+                    <div style="color:#71767b;font-size:11px;">274 conversations</div>
+                </div>
+                <div style="background:#2a2d31;padding:12px;border-radius:8px;margin:10px 0;border:1px solid #1d9bf0;">
+                    <div style="color:#1d9bf0;font-size:12px;margin-bottom:4px;">user_data.json ⭐</div>
+                    <div style="color:#71767b;font-size:11px;">Your tags, stars, and notes</div>
+                </div>
+                
+                <h3 style="color:#1d9bf0;margin-top:20px;">About</h3>
+                <div style="background:#2a2d31;padding:12px;border-radius:8px;margin:10px 0;">
+                    <div style="color:#71767b;font-size:12px;">Version: <span style="color:#fff;" id="version-display">v0.4.51</span></div>
+                    <div id="debug-status" style="color:#00ff00;font-size:10px;margin-top:4px;padding:4px;background:#000;"></div>
+                    <div style="color:#71767b;font-size:12px;margin-top:8px;">GitHub: <a href="https://github.com/griptoad26/x-knowledge-graph" target="_blank" style="color:#1d9bf0;">github.com/griptoad26/x-knowledge-graph</a></div>
+                </div>
+                
+                <h3 style="color:#1d9bf0;margin-top:20px;">Data Sources</h3>
+                <div style="background:#2a2d31;padding:12px;border-radius:8px;margin:10px 0;">
+                    <div style="color:#71767b;font-size:12px;margin-bottom:4px;">X Export</div>
+                    <div style="color:#fff;font-size:12px;">https://x.com/settings/download_your_data</div>
+                </div>
+                <div style="background:#2a2d31;padding:12px;border-radius:8px;margin:10px 0;">
+                    <div style="color:#71767b;font-size:12px;margin-bottom:4px;">Grok Export</div>
+                    <div style="color:#fff;font-size:12px;">https://accounts.x.ai/data</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <!-- Data Source - Collapsible, can be hidden via Settings -->
+            <div class="sidebar-section" id="data-source-section">
+                <div class="sidebar-title" style="display:flex;justify-content:space-between;align-items:center;" onclick="var c=document.getElementById('data-source-content');c.style.display=c.style.display==='none'?'':'none';this.querySelector('span').textContent=c.style.display==='none'?'+ Data Source':'− Data Source'">
+                    <span>Data Source</span>
+                    <span style="background:none;border:none;color:var(--text-secondary);cursor:pointer;font-size:16px;">−</span>
+                </div>
+                
+                <div id="data-source-content">
+                    <!-- X Export Folder -->
+                    <div id="x-folder-section">
+                        <button class="btn btn-primary" style="width: 100%;" onclick="document.getElementById('folder-input').click()">
+                            📂 Browse X Folder
+                        </button>
+                        <input type="file" id="folder-input" webkitdirectory webkitdirectory directory style="display: none;" onchange="handleFolderSelect(this, 'x')">
+                        <input type="text" id="x-folder-path" placeholder="Select X export folder..." 
+                               style="width: 100%; background: var(--bg-tertiary); border: 1px solid var(--border-color); 
+                                      color: var(--text-primary); padding: 8px; border-radius: 4px; 
+                                      font-size: 12px; margin-top: 8px;">
+                    </div>
+
+                    <!-- Grok Export Folder -->
+                    <div id="grok-folder-section" style="margin-top: 8px;">
+                        <button class="btn btn-secondary" style="width: 100%;" onclick="document.getElementById('grok-folder-input').click()">
+                            📂 Browse Grok Folder
+                        </button>
+                        <input type="file" id="grok-folder-input" webkitdirectory webkitdirectory directory style="display: none;" onchange="handleFolderSelect(this, 'grok')">
+                        <input type="text" id="grok-folder-path" placeholder="Select Grok export folder..." 
+                               style="width: 100%; background: var(--bg-tertiary); border: 1px solid var(--border-color); 
+                                      color: var(--text-primary); padding: 8px; border-radius: 4px; 
+                                      font-size: 12px; margin-top: 8px;">
+                    </div>
+
+                    <!-- Export Type Selection -->
+                    <div style="display: flex; gap: 8px; margin-top: 8px; font-size: 11px;">
+                        <label style="display: flex; align-items: center; gap: 4px;">
+                            <input type="radio" name="export-type" value="both" checked> Both
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 4px;">
+                            <input type="radio" name="export-type" value="x"> X Only
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 4px;">
+                            <input type="radio" name="export-type" value="grok"> Grok Only
+                        </label>
+                    </div>
+
+                    <!-- Load Button -->
+                    <button class="btn btn-success" style="width: 100%; margin-top: 12px;" onclick="parseExport()">
+                        ▶️ Load Data
+                    </button>
+
+                    <!-- Clear Button -->
+                    <button class="btn btn-secondary" style="width: 100%; margin-top: 6px;" onclick="clearGraph()">
+                        🗑️ Clear
+                    </button>
+                    
+                    <!-- Data Type Toggles -->
+                    <div style="margin-top: 12px; padding: 8px; background: var(--bg-tertiary); border-radius: 6px;">
+                        <div style="font-size: 11px; color: var(--text-secondary); margin-bottom: 6px;">SHOW IN VIEWS:</div>
+                        <label style="display: flex; align-items: center; gap: 8px; margin: 4px 0; cursor: pointer;">
+                            <input type="checkbox" id="toggle-tweets" onchange="toggleDataType('tweets')" checked>
+                            <span>🐦 Tweets</span>
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 8px; margin: 4px 0; cursor: pointer;">
+                            <input type="checkbox" id="toggle-likes" onchange="toggleDataType('likes')" checked>
+                            <span>❤️ Likes</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Data Type Selection - Controls what shows in Views (Tree Structure) -->
+            <div class="sidebar-section">
+                <div class="sidebar-title">Data Type</div>
+                
+                <!-- Tree Structure -->
+                <div class="data-type-tree" style="background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: 8px; padding: 4px 0; margin-top: 8px;">
+                    
+                    <!-- Conversations (expandable) - DEFAULT -->
+                    <div class="tree-item active" onclick="toggleTreeItem(this)" style="padding: 6px 8px; cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 13px; border-radius: 4px; margin: 2px 4px;">
+                        <span class="tree-toggle" style="width: 16px; font-size: 10px; color: var(--text-secondary);">▼</span>
+                        <span style="color: #f91880;">💬</span>
+                        <span style="font-weight: 600; flex: 1;">Conversations</span>
+                        <span style="color: var(--text-secondary); font-size: 11px;" id="tree-convos-count">269</span>
+                    </div>
+                    <div class="tree-children" style="padding-left: 24px; display: block;">
+                        <div class="tree-item" onclick="currentDataType='grok'; loadDataType('grok')" style="padding: 6px 8px; cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 12px; border-radius: 4px; margin: 2px 4px;">
+                            <span style="width: 16px;"></span>
+                            <span style="color: #8b5cf6;">🤖</span>
+                            <span style="flex: 1;">Grok</span>
+                            <span style="color: var(--text-secondary); font-size: 11px;" id="tree-grok-count">0</span>
+                        </div>
+                        <div class="tree-item active" onclick="currentDataType='grokx'; loadDataType('grokx')" style="padding: 6px 8px; cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 12px; border-radius: 4px; margin: 2px 4px; background: var(--bg-tertiary);">
+                            <span style="width: 16px;"></span>
+                            <span style="color: #8b5cf6;">🧠</span>
+                            <span style="flex: 1;">Grok/X</span>
+                            <span style="color: var(--text-secondary); font-size: 11px;" id="tree-grokx-count">0</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Tweets (expandable) -->
+                    <div class="tree-item" onclick="toggleTreeItem(this)" style="padding: 6px 8px; cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 13px; border-radius: 4px; margin: 2px 4px;">
+                        <span class="tree-toggle" style="width: 16px; font-size: 10px; color: var(--text-secondary);">▶</span>
+                        <span style="color: #1d9bf0;">🐦</span>
+                        <span style="font-weight: 600; flex: 1;">Tweets</span>
+                        <span style="color: var(--text-secondary); font-size: 11px;" id="tree-tweets-count">5888</span>
+                    </div>
+                    <div class="tree-children" style="padding-left: 24px; display: none;">
+                        <div class="tree-item" onclick="selectDataType('tweet', this)" style="padding: 6px 8px; cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 12px; border-radius: 4px; margin: 2px 4px;">
+                            <span style="width: 16px;"></span>
+                            <span style="color: #f91880;">✍️</span>
+                            <span style="flex: 1;">Tweet</span>
+                            <span style="color: var(--text-secondary); font-size: 11px;" id="tree-tweet-count">0</span>
+                        </div>
+                        <div class="tree-item" onclick="selectDataType('reply', this)" style="padding: 6px 8px; cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 12px; border-radius: 4px; margin: 2px 4px;">
+                            <span style="width: 16px;"></span>
+                            <span style="color: #1d9bf0;">💬</span>
+                            <span style="flex: 1;">Reply</span>
+                            <span style="color: var(--text-secondary); font-size: 11px;" id="tree-reply-count">0</span>
+                        </div>
+                        <div class="tree-item" onclick="selectDataType('retweet', this)" style="padding: 6px 8px; cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 12px; border-radius: 4px; margin: 2px 4px;">
+                            <span style="width: 16px;"></span>
+                            <span style="color: #00ba7c;">🔄</span>
+                            <span style="flex: 1;">Retweet</span>
+                            <span style="color: var(--text-secondary); font-size: 11px;" id="tree-retweet-count">0</span>
+                        </div>
+                        <div class="tree-item" onclick="selectDataType('likes', this)" style="padding: 6px 8px; cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 12px; border-radius: 4px; margin: 2px 4px;">
+                            <span style="width: 16px;"></span>
+                            <span style="color: #f91880;">❤️</span>
+                            <span style="flex: 1;">Likes</span>
+                            <span style="color: var(--text-secondary); font-size: 11px;" id="tree-likes-count">0</span>
+                        </div>
+                        <div class="tree-item" onclick="selectDataType('bookmark', this)" style="padding: 6px 8px; cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 12px; border-radius: 4px; margin: 2px 4px;">
+                            <span style="width: 16px;"></span>
+                            <span style="color: #ffd400;">🔖</span>
+                            <span style="flex: 1;">Bookmarks</span>
+                            <span style="color: var(--text-secondary); font-size: 11px;" id="tree-bookmark-count">0</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="sidebar-section">
+                <div class="sidebar-title">Views</div>
+                <nav class="nav-tabs">
+                    <div class="nav-tab active" data-view="list" onclick="switchView('list')">
+                        <span class="icon">&#128203;</span>
+                        <span>List</span>
+                        <span class="badge" id="list-count">5888</span>
+                    </div>
+                    <div class="nav-tab" data-view="graph" onclick="switchView('graph')">
+                        <span class="icon">🔗</span>
+                        <span>Graph View</span>
+                        <span class="badge" id="graph-count">6927</span>
+                    </div>
+                    <div class="nav-tab" data-view="timeline" onclick="switchView('timeline')">
+                        <span class="icon">📅</span>
+                        <span>Timeline</span>
+                        <span class="badge" id="timeline-count">0</span>
+                    </div>
+                    <div class="nav-tab" data-view="taskboard" onclick="switchView('taskboard')">
+                        <span class="icon">📋</span>
+                        <span>Task Board</span>
+                        <span class="badge" id="task-count">0</span>
+                    </div>
+                    <div class="nav-tab" data-view="clusters" onclick="switchView('clusters')">
+                        <span class="icon">🏷️</span>
+                        <span>Topic Clusters</span>
+                        <span class="badge" id="cluster-count">0</span>
+                    </div>
+                    <div class="nav-tab" data-view="conversation" onclick="switchView('conversation')">
+                        <span class="icon">💬</span>
+                        <span>Conversation Tree</span>
+                        <span class="badge" id="conversation-count">0</span>
+                    </div>
+                    <div class="nav-tab" onclick="window.open('/prompt-review.html', '_blank')">
+                        <span class="icon">📝</span>
+                        <span>Prompt Review</span>
+                    </div>
+                </nav>
+            </div>
+
+            <div class="sidebar-section" id="stats-section" style="display: none;">
+                <div class="sidebar-title">Statistics</div>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-value" id="stat-tweets">0</div>
+                        <div class="stat-label">Tweets</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="stat-actions">0</div>
+                        <div class="stat-label">Actions</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="stat-topics">0</div>
+                        <div class="stat-label">Topics</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="stat-conversations">0</div>
+                        <div class="stat-label">Conversations</div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- ==================== GRAPH VIEW ==================== -->
+            <div class="view-container active" id="view-list">
+            <div style="padding: 20px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+                    <h3 style="color: var(--accent-primary);margin:0;">All Items</h3>
+                    <select id="list-sort" onchange="sortList()" style="background:var(--bg-tertiary);color:var(--text-primary);border:1px solid var(--border-color);padding:6px 10px;border-radius:6px;font-size:12px;">
+                        <option value="date-desc">Newest First</option>
+                        <option value="date-asc">Oldest First</option>
+                    </select>
+                </div>
+                <div id="list-content">
+                    <p>Click Load Data to load exports.</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="view-container" id="view-graph">
+                <div class="graph-view">
+                    <div class="graph-toolbar">
+                        <button class="btn" onclick="zoomIn()">🔍+</button>
+                        <button class="btn" onclick="zoomOut()">🔍-</button>
+                        <button class="btn" onclick="zoomReset()">🔍100%</button>
+                        <button class="btn" onclick="fitGraph()">⊡ Fit</button>
+                    </div>
+                    <div class="graph-filters">
+                        <label>Layout Algorithm</label>
+                        <select id="layout-select" onchange="changeLayout(this.value)">
+                            <option value="force">🔗 Force-Directed</option>
+                            <option value="hierarchical">📊 Hierarchical</option>
+                            <option value="circular">⭕ Circular</option>
+                            <option value="radial">☀️ Radial</option>
+                            <option value="grid">▦ Grid</option>
+                        </select>
+                        <label style="margin-top: 10px;">Filter by Type</label>
+                        <select id="node-type-filter" onchange="filterNodes()">
+                            <option value="all">All Types</option>
+                            <option value="tweet">Tweets</option>
+                            <option value="action">Actions</option>
+                            <option value="topic">Topics</option>
+                        </select>
+                        <label style="margin-top: 10px;">Search Nodes</label>
+                        <input type="text" id="node-search" placeholder="Search..." onkeyup="searchNodes()">
+                    </div>
+                    <div class="graph-info" id="graph-info">Load X export to see knowledge graph</div>
+                    <div id="graph-container" style="width:100%;height:calc(100vh - 200px);"></div>
+                    <svg id="graph-svg" style="display:none;"></svg>
+                        <text x="50%" y="50%" text-anchor="middle" fill="#666" font-size="14">
+                            Load X export to see knowledge graph
+                        </text>
+                    </svg>
+                    <div class="node-tooltip" id="node-tooltip">
+                        <div class="node-tooltip-title"></div>
+                        <div class="node-tooltip-text"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ==================== TIMELINE VIEW ==================== -->
+            <div class="view-container" id="view-timeline">
+                <div class="timeline-view">
+                    <div class="timeline-toolbar">
+                        <div>
+                            <label>From:</label>
+                            <input type="date" id="timeline-start" onchange="filterTimeline()">
+                        </div>
+                        <div>
+                            <label>To:</label>
+                            <input type="date" id="timeline-end" onchange="filterTimeline()">
+                        </div>
+                        <button class="btn" onclick="clearTimelineFilter()">Clear</button>
+                        <div style="margin-left: auto; font-size: 12px; color: var(--text-secondary);">
+                            Showing <span id="timeline-visible">0</span> of <span id="timeline-total">0</span> items
+                        </div>
+                    </div>
+                    <div class="heatmap-container">
+                        <div class="heatmap-title">Activity Heatmap (Last 30 Days)</div>
+                        <div class="heatmap-grid" id="heatmap"></div>
+                    </div>
+                    <div class="timeline-container">
+                        <div class="timeline-stream" id="timeline-stream">
+                            <div class="empty-state">
+                                <div class="icon">📅</div>
+                                <h3>No Timeline Data</h3>
+                                <p>Load an X export to see your chronological activity stream</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ==================== TASK BOARD VIEW ==================== -->
+            <div class="view-container" id="view-taskboard">
+                <div class="taskboard-view">
+                    <div class="taskboard-toolbar">
+                        <h2>Task Board</h2>
+                        <div>
+                            <label style="margin-right: 10px;">Filter:</label>
+                            <select id="task-filter" onchange="filterTasks()">
+                                <option value="all">All Tasks</option>
+                                <option value="pending">Pending</option>
+                                <option value="in_progress">In Progress</option>
+                                <option value="complete">Completed</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="taskboard-columns">
+                        <div class="task-column" id="column-todo" 
+                             ondragover="handleDragOver(event)" 
+                             ondrop="handleDrop(event, 'todo')"
+                             ondragleave="handleDragLeave(event)">
+                            <div class="column-header">
+                                <span class="column-title">📝 To Do</span>
+                                <span class="column-count" id="count-todo">0</span>
+                            </div>
+                            <div class="column-content" id="tasks-todo"></div>
+                        </div>
+                        <div class="task-column" id="column-inprogress" 
+                             ondragover="handleDragOver(event)" 
+                             ondrop="handleDrop(event, 'in_progress')"
+                             ondragleave="handleDragLeave(event)">
+                            <div class="column-header">
+                                <span class="column-title">🔄 In Progress</span>
+                                <span class="column-count" id="count-inprogress">0</span>
+                            </div>
+                            <div class="column-content" id="tasks-inprogress"></div>
+                        </div>
+                        <div class="task-column" id="column-done" 
+                             ondragover="handleDragOver(event)" 
+                             ondrop="handleDrop(event, 'done')"
+                             ondragleave="handleDragLeave(event)">
+                            <div class="column-header">
+                                <span class="column-title">✅ Done</span>
+                                <span class="column-count" id="count-done">0</span>
+                            </div>
+                            <div class="column-content" id="tasks-done"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ==================== TOPIC CLUSTERS VIEW ==================== -->
+            <div class="view-container" id="view-clusters">
+                <div class="clusters-view">
+                    <div class="clusters-toolbar">
+                        <input type="text" id="cluster-search" placeholder="Search clusters..." onkeyup="searchClusters()">
+                        <button class="btn" onclick="expandAllClusters()">Expand All</button>
+                        <button class="btn" onclick="collapseAllClusters()">Collapse All</button>
+                    </div>
+                    <div class="clusters-container">
+                        <div class="clusters-grid" id="clusters-grid">
+                            <div class="empty-state">
+                                <div class="icon">🏷️</div>
+                                <h3>No Topic Clusters</h3>
+                                <p>Load an X export to see your topics organized by keywords</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ==================== CONVERSATION TREE VIEW ==================== -->
+            <div class="view-container" id="view-conversation">
+                <div class="conversation-view">
+                    <div class="conversation-toolbar">
+                        <input type="text" id="conversation-search" placeholder="Search conversations..." onkeyup="searchConversations()">
+                        <button class="btn" onclick="expandAllThreads()">Expand All</button>
+                        <button class="btn" onclick="collapseAllThreads()">Collapse All</button>
+                    </div>
+                    <div class="conversation-container">
+                        <div class="conversation-tree" id="conversation-tree">
+                            <div class="empty-state">
+                                <div class="icon">💬</div>
+                                <h3>No Conversations</h3>
+                                <p>Load an X export to see your reply threads organized</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Right Panel - Search & Details -->
+        <aside class="right-panel">
+            <div class="panel-section search-section">
+                <div class="panel-title" style="margin-bottom: 8px;">🔍 Search</div>
+                <input type="text" id="global-search" placeholder="Search tweets, likes, conversations..." 
+                       onkeyup="handleSearch(this.value)">
+                <div id="search-results" style="margin-top: 8px; max-height: 200px; overflow-y: auto;"></div>
+            </div>
+            <div class="panel-section">
+                <div class="panel-title">Details</div>
+                <div id="details-content">
+                    <p style="color: var(--text-secondary); font-size: 12px;">
+                        Select an item to view details
+                    </p>
+                </div>
+            </div>
+        </aside>
+    </div>
+
+    <!-- Export Modal -->
+    <div id="export-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 10000; overflow-y: auto;">
+        <div style="background: var(--bg-secondary); border: 1px solid var(--accent-primary); border-radius: 12px; max-width: 800px; margin: 40px auto; overflow: hidden;">
+            <div style="padding: 20px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center;">
+                <h2 style="color: var(--accent-primary); margin: 0;">📑 Export Preview</h2>
+                <button onclick="closeExportModal()" style="background: none; border: none; color: var(--text-secondary); font-size: 24px; cursor: pointer;">×</button>
+            </div>
+            <div id="export-preview" style="padding: 20px; max-height: 60vh; overflow-y: auto; background: var(--bg-primary);"></div>
+            <div style="padding: 20px; border-top: 1px solid var(--border-color); display: flex; justify-content: flex-end; gap: 10px;">
+                <button class="btn btn-secondary" onclick="closeExportModal()">Cancel</button>
+                <button class="btn btn-primary" id="download-pdf-btn" onclick="downloadPDF()">Download PDF</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Help Modal -->
+    <div id="help-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 10000; overflow-y: auto;">
+        <div style="background: var(--bg-secondary); border: 1px solid var(--accent-primary); border-radius: 12px; max-width: 600px; margin: 40px auto; overflow: hidden;">
+            <div style="padding: 20px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center;">
+                <h2 style="color: var(--accent-primary); margin: 0;">📖 How to Use</h2>
+                <button onclick="hideHelp()" style="background: none; border: none; color: var(--text-secondary); font-size: 24px; cursor: pointer;">×</button>
+            </div>
+            <div style="padding: 20px; line-height: 1.8;">
+                <h3 style="color: var(--accent-success);">🐦 X Export</h3>
+                <ol style="margin: 0 0 20px 20px; color: var(--text-primary);">
+                    <li>Settings → Your account → Download an archive</li>
+                    <li>Request archive (may take hours/days)</li>
+                    <li>Download ZIP when ready, extract</li>
+                    <li>Select folder with Browse button</li>
+                </ol>
+                <h3 style="color: var(--accent-primary);">📊 Views</h3>
+                <ul style="margin: 0 0 20px 20px; color: var(--text-primary);">
+                    <li><strong>Graph View:</strong> Force-directed visualization of connections</li>
+                    <li><strong>Timeline:</strong> Chronological stream of activity</li>
+                    <li><strong>Task Board:</strong> Kanban board for action items</li>
+                    <li><strong>Topic Clusters:</strong> Keyword-based grouping</li>
+                    <li><strong>Conversation Tree:</strong> Threaded reply structure</li>
+                </ul>
+                <h3 style="color: var(--accent-warning);">🌙 Light/Dark Mode</h3>
+                <ul style="margin: 0 0 20px 20px; color: var(--text-primary);">
+                    <li><strong>Theme Toggle:</strong> Click the moon/sun icon in the header</li>
+                    <li><strong>Auto-detection:</strong> Defaults to your system preference</li>
+                    <li><strong>Persistence:</strong> Your theme choice is saved automatically</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Topic Drill-down Modal -->
+    <div id="topic-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 10000; overflow-y: auto;">
+        <div style="background: var(--bg-secondary); border: 1px solid var(--accent-primary); border-radius: 12px; max-width: 900px; margin: 40px auto; overflow: hidden; max-height: calc(100vh - 80px); display: flex; flex-direction: column;">
+            <div style="padding: 20px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center;">
+                <h2 style="color: var(--accent-primary); margin: 0;">
+                    <span class="icon">🏷️</span>
+                    <span id="modal-topic-name">Topic Name</span>
+                </h2>
+                <button onclick="hideTopicModal()" style="background: none; border: none; color: var(--text-secondary); font-size: 24px; cursor: pointer;">×</button>
+            </div>
+            <div style="padding: 0; flex: 1; overflow-y: auto;">
+                <div class="modal-tabs" style="display: flex; border-bottom: 1px solid var(--border-color); background: var(--bg-tertiary);">
+                    <div class="modal-tab active" data-tab="actions" onclick="switchModalTab('actions')">
+                        <span class="icon">📋</span> Actions <span id="modal-actions-count">0</span>
+                    </div>
+                    <div class="modal-tab" data-tab="tweets" onclick="switchModalTab('tweets')">
+                        <span class="icon">🐦</span> Tweets <span id="modal-tweets-count">0</span>
+                    </div>
+                </div>
+                <div id="modal-content" style="padding: 20px;">
+                    <!-- Dynamic content -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        /* Drill-down modal styles */
+        .modal-tabs {
+            padding: 0 10px;
+        }
+        .modal-tab {
+            padding: 12px 20px;
+            cursor: pointer;
+            color: var(--text-secondary);
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .modal-tab:hover {
+            color: var(--text-primary);
+            background: rgba(255,255,255,0.05);
+        }
+        .modal-tab.active {
+            color: var(--accent-primary);
+            border-bottom-color: var(--accent-primary);
+        }
+        .modal-section-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .modal-action-card {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 14px;
+            margin-bottom: 10px;
+            transition: all 0.2s;
+        }
+        .modal-action-card:hover {
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 12px rgba(0, 217, 255, 0.15);
+        }
+        .modal-action-text {
+            font-size: 14px;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+            line-height: 1.5;
+        }
+        .modal-action-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: center;
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+        .amazon-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: linear-gradient(135deg, #FF9900 0%, #FFAD33 100%);
+            color: #111;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+        .amazon-link:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(255, 153, 0, 0.4);
+        }
+        .modal-tweet-card {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 14px;
+            margin-bottom: 10px;
+        }
+        .modal-tweet-text {
+            font-size: 14px;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+            line-height: 1.5;
+        }
+        .modal-empty {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-secondary);
+        }
+        .modal-empty .icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+            opacity: 0.5;
+        }
+        
+        /* Scrollable view containers */
+        .view-container {
+            overflow-y: auto;
+            overflow-x: hidden;
+            scroll-behavior: smooth;
+        }
+        .view-container::-webkit-scrollbar {
+            width: 8px;
+        }
+        .view-container::-webkit-scrollbar-track {
+            background: var(--bg-tertiary);
+        }
+        .view-container::-webkit-scrollbar-thumb {
+            background: var(--border-color);
+            border-radius: 4px;
+        }
+        .view-container::-webkit-scrollbar-thumb:hover {
+            background-color: var(--accent-color);
+        }
+        
+        /* Search section in right panel */
+        .search-section {
+            padding: 12px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        /* Bubble expand styles */
+        .item-bubble {
+            transition: all 0.3s ease;
+            max-height: 150px;
+            overflow: hidden;
+        }
+        .item-bubble.expanded {
+            max-height: 600px;
+            overflow-y: auto;
+        }
+        .item-bubble .item-full {
+            display: none;
+        }
+        .item-bubble.expanded .item-text {
+            display: none;
+        }
+        .item-bubble.expanded .item-full {
+            display: block;
+        }
+        
+        .conversation-bubble {
+            transition: all 0.3s ease;
+            max-height: 100px;
+            overflow: hidden;
+        }
+        .conversation-bubble.expanded {
+            max-height: 800px;
+            overflow-y: auto;
+        }
+        .conversation-bubble .conversation-messages {
+            display: none;
+        }
+        .conversation-bubble.expanded .conversation-messages {
+            display: block;
+        }
+        /* ======== STYLE 2: CHAT BUBBLE (Tweets/Likes) ======== */
+        .chat-bubble-container {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+        .chat-bubble-msg {
+            max-width: 85%;
+            padding: 12px 16px;
+            border-radius: 18px;
+            font-size: 14px;
+            line-height: 1.4;
+        }
+        .chat-bubble-msg.sent {
+            align-self: flex-end;
+            background: var(--accent-color, #00d9ff);
+            color: var(--bg-primary, #000);
+        }
+        .chat-bubble-msg.received {
+            align-self: flex-start;
+            background: var(--bg-secondary, #16213e);
+            border: 1px solid var(--border-color);
+        }
+        
+        /* ======== STYLE 5: GRID CARDS (Likes) ======== */
+        .grid-view {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 12px;
+            padding: 12px;
+        }
+        .grid-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 14px;
+            transition: border-color 0.2s;
+        }
+        .grid-card:hover {
+            border-color: var(--accent-color);
+        }
+        
+        /* ======== STYLE 6: MINIMAL LIST (Tweets) ======== */
+        .minimal-list {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+        .minimal-item {
+            border-left: 3px solid var(--accent-color, #00d9ff);
+            padding: 10px 14px;
+            background: transparent;
+            border-right: 1px solid var(--border-color);
+            border-top: 1px solid var(--border-color);
+            border-bottom: 1px solid var(--border-color);
+            cursor: pointer;
+        }
+        .minimal-item:hover {
+            background: var(--bg-secondary);
+        }
+        .minimal-item .handle {
+            color: var(--accent-color);
+            font-weight: 600;
+            font-size: 13px;
+        }
+        
+        /* ======== STYLE 8: COLLAPSIBLE THREAD (Conversations) ======== */
+        .collapsible-thread { background: #16181c; border: 1px solid #2f3336; border-radius: 16px; margin-bottom: 12px; overflow: hidden; }
+        .collapsible-header { padding: 14px 16px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; background: #1c1f23; }
+        .collapsible-header:hover { background: #1c1f23; } /* No color change on hover */
+        .collapsible-body { max-height: 0; overflow: hidden; transition: max-height 0.4s ease; overflow-y: auto; }
+        .collapsible-thread.expanded .collapsible-body { max-height: 4000px; overflow-y: auto; }
+        
+        .collapsible-body::-webkit-scrollbar { width: 6px; }
+        .collapsible-body::-webkit-scrollbar-track { background: #16181c; }
+        .collapsible-body::-webkit-scrollbar-thumb { background: #2f3336; border-radius: 3px; }
+        .collapsible-body::-webkit-scrollbar-thumb:hover { background: #1d9bf0; }
+        
+        .chat-bubbles-list { padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+        .thread-msg {
+            padding: 10px 16px;
+            border-top: 1px solid var(--border-color);
+        }
+        .thread-msg .sender {
+            color: var(--accent-color);
+            font-weight: 600;
+            font-size: 13px;
+        }
+        .thread-msg .text {
+            margin-top: 4px;
+            font-size: 14px;
+            line-height: 1.4;
+        }
+        .toggle-icon { width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; background: #2f3336; border-radius: 50%; color: #e7e9ea; font-size: 16px; transition: transform 0.3s, background 0.3s; }
+        .collapsible-thread.expanded .toggle-icon { transform: rotate(45deg); background: #1d9bf0; }
+        
+        /* ======== X2 STYLE (Tweets) ======== */
+        .x2-container { padding: 0; border-bottom: 1px solid var(--border-color); }
+        .x2-tweet { padding: 12px 16px; border-bottom: 1px solid var(--border-color); position: relative; max-height: 150px; overflow: hidden; }
+        .x2-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px; }
+        .x2-names { display: flex; align-items: baseline; gap: 4px; }
+        .x2-display-name { font-weight: 700; color: var(--text-primary); font-size: 15px; }
+        .x2-handle { color: var(--text-secondary); font-size: 15px; }
+        .x2-liked { color: #f91880; font-weight: 600; font-size: 13px; }
+        .x2-text { font-size: 15px; line-height: 20px; color: var(--text-primary); white-space: pre-wrap; }
+        .x2-meta { color: var(--text-secondary); font-size: 13px; margin-top: 8px; }
+        .x2-label { font-weight: 600; font-size: 13px; padding: 2px 8px; border-radius: 4px; }
+        .x2-label.reply { color: #1d9bf0; background: rgba(29,155,240,0.1); }
+        .x2-label.retweet { color: #00ba7c; background: rgba(0,186,124,0.1); }
+        .x2-label.like { color: #f91880; background: rgba(249,24,128,0.1); }
+        .x2-label.bookmark { color: #ffd400; background: rgba(255,212,0,0.1); }
+        .x2-expand-btn { position: absolute; bottom: 8px; right: 8px; background: #1d9bf0; color: #fff; border: none; width: 28px; height: 28px; border-radius: 50%; font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        
+        /* ======== CHAT BUBBLE STYLE (Conversations) ======== */
+        .chat-bubbles-list { padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+        .chat-bubble-list { width: 70%; min-height: 40px; padding: 8px 12px; border-radius: 18px; font-size: 14px; line-height: 1.4; position: relative; max-height: 150px; overflow-y: auto; transition: all 0.3s; box-sizing: border-box; cursor: pointer; }
+        .chat-bubble-list.expanded { height: auto; max-height: none; overflow-y: auto; }
+        .chat-bubble-list.user { align-self: flex-start; background: #2f3336; color: #e7e9ea; border-bottom-left-radius: 4px; }
+        .chat-bubble-list.ai { align-self: flex-end; background: #1d9bf0; color: white; border-bottom-right-radius: 4px; margin-left: auto; margin-right: 15px; }
+        .chat-bubble-list .sender-row { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 2px; min-height: 14px; }
+        .chat-bubble-list .sender { font-size: 10px; font-weight: 600; }
+        .chat-bubble-list.user .sender { color: #1d9bf0; }
+        .chat-bubble-list .expand-btn { font-size: 12px; opacity: 0.7; }
+        .chat-bubble-list .msg-text { font-size: 13px; line-height: 1.3; white-space: pre-wrap; }
+        .chat-bubble-list.expanded .msg-text { }
+        .chat-bubble-expand { background: #1d9bf0; color: #fff; border: none; width: 20px; height: 20px; border-radius: 50%; font-size: 12px; cursor: pointer; margin-left: 8px; flex-shrink: 0; }
+        .chat-bubble-list.user .chat-bubble-expand { background: #71767b; }
+        
+        /* ======== STYLE 9: ACCORDION (Conversations) ======== */
+        .accordion-conv {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 14px;
+            margin-bottom: 10px;
+            overflow: hidden;
+        }
+        .accordion-conv-header {
+            padding: 14px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+        }
+        .accordion-conv-header:hover {
+            background: var(--bg-tertiary);
+        }
+        .accordion-conv-body {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+        }
+        .accordion-conv.expanded .accordion-conv-body {
+            max-height: 800px;
+            overflow-y: auto;
+        }
+        .close-btn {
+            font-size: 22px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            line-height: 1;
+        }
+        .close-btn:hover {
+            color: var(--text-primary);
+        }
+        
+        /* Search section */
+        .search-section input {
+            width: 100%;
+            padding: 8px 12px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            color: var(--text-primary);
+            font-size: 13px;
+        }
+        .search-section input:focus {
+            outline: none;
+            border-color: var(--accent-color);
+        }
+    </style>
+
+    <script>
+        try {
+        // Define graphData FIRST so functions can access it
+        let graphData = { nodes: [], edges: [] };
+        
+        // Load preferences on start
+        loadPreferences();
+        
+        // Global error handler
+        window.onerror = function(msg, url, line, col, error) {
+            console.error('JS Error:', msg, 'line:', line);
+            const debug = document.getElementById('debug-status');
+            if (debug) debug.innerHTML = 'ERROR: ' + msg;
+            return false;
+        };
+        
+        // AUTO-LOAD DATA ON PAGE LOAD
+        (async function autoLoadData() {
+            console.log('XKG: Starting auto load...');
+            
+            try {
+                // Fetch summary
+                const summaryRes = await fetch('/api/data/summary');
+                const summary = await summaryRes.json();
+                
+                console.log('XKG: Summary loaded', summary);
+                
+                // Update counts
+                document.getElementById('tree-tweets-count').textContent = summary.tweets || 0;
+                document.getElementById('tree-likes-count').textContent = summary.likes || 0;
+                document.getElementById('tree-convos-count').textContent = summary.conversations || 0;
+                document.getElementById('list-count').textContent = summary.tweets || 0;
+                
+                // Load graph data
+                const graphRes = await fetch('/api/graph');
+                const graphApiData = await graphRes.json();
+                if (graphApiData.nodes && graphApiData.nodes.length > 0) {
+                    document.getElementById('graph-count').textContent = graphApiData.nodes.length;
+                    graphData = graphApiData;
+                }
+                
+                // Load actions
+                const actionsRes = await fetch('/api/actions');
+                const actionsData = await actionsRes.json();
+                const actionList = Array.isArray(actionsData) ? actionsData : (actionsData.actions || []);
+                document.getElementById('task-count').textContent = actionList.length;
+                
+                // Load topics
+                const topicsRes = await fetch('/api/topics');
+                const topicsData = await topicsRes.json();
+                const topicList = (topicsData.api || topicsData).topics || [];
+                document.getElementById('cluster-count').textContent = topicList.length;
+                
+                console.log('XKG: All data loaded successfully');
+                
+            } catch(e) {
+                console.error('XKG: Auto load error:', e);
+            }
+        })();
+                
+                // Build timeline data from tweets
+                timelineData = [];
+                if (tweetsData.data && tweetsData.data.length > 0) {
+                    tweetsData.data.forEach(tweet => {
+                        if (tweet.created_at) {
+                            timelineData.push({
+                                id: tweet.id || 'tweet-' + Math.random(),
+                                type: 'tweet',
+                                date: new Date(tweet.created_at).toISOString().split('T')[0],
+                                content: tweet.text || '',
+                                meta: tweet.type || 'tweet'
+                            });
+                        }
+                    });
+                    document.getElementById('timeline-count').textContent = timelineData.length;
+                }
+                
+                console.log('Auto-loaded data:', tweetsData.count, 'tweets', convosData.count, 'convos', 'timeline:', timelineData.length);
+                
+                // Load topics from API (actions grouped by topic)
+                try {
+                    const topicsResp = await fetch('/api/topics');
+                    const topicsData = await topicsResp.json();
+                    if (topicsData && topicsData.api) {
+                        // Convert API format to frontend format
+                        const apiActions = topicsData.api.items || [];
+                        actions = apiActions;  // Store for Task Board
+                        const topicMap = {};
+                        apiActions.forEach(action => {
+                            const topicName = action.topic || 'general';
+                            if (!topicMap[topicName]) {
+                                topicMap[topicName] = { items: [], action_count: 0 };
+                            }
+                            topicMap[topicName].items.push(action);
+                            topicMap[topicName].action_count++;
+                        });
+                        topics = topicMap;
+                        console.log('Loaded topics from API:', Object.keys(topics).length, 'actions:', actions.length);
+                        document.getElementById('cluster-count').textContent = Object.keys(topics).length;
+                        document.getElementById('task-count').textContent = actions.length;
+                    }
+                } catch(e) {
+                    console.warn('Failed to load topics from API:', e);
+                }
+                
+                // Render current view AFTER topics and actions are loaded
+                renderCurrentView();
+            } catch(e) {
+                console.warn('Auto-load failed:', e);
+            }
+        })();
+        
+        // Generate topic clusters from tweets - simple extraction with hashtags
+        function generateTopicsFromTweets(tweets) {
+            const topics = {};
+            const stopWords = new Set(['the', 'a', 'an', 'is', 'are', 'was', 'were', 'be', 'been', 'being', 'have', 'has', 'had', 'do', 'does', 'did', 'will', 'would', 'could', 'should', 'may', 'might', 'must', 'shall', 'can', 'need', 'dare', 'ought', 'used', 'to', 'of', 'in', 'for', 'on', 'with', 'at', 'by', 'from', 'as', 'into', 'through', 'during', 'before', 'after', 'above', 'below', 'between', 'under', 'again', 'further', 'then', 'once', 'here', 'there', 'when', 'where', 'why', 'how', 'all', 'each', 'few', 'more', 'most', 'other', 'some', 'such', 'no', 'nor', 'not', 'only', 'own', 'same', 'so', 'than', 'too', 'very', 'just', 'and', 'but', 'if', 'or', 'because', 'until', 'while', 'this', 'that', 'these', 'those', 'am', 'it', 'its', 'my', 'your', 'his', 'her', 'their', 'our', 'we', 'you', 'i', 'he', 'she', 'they', 'me', 'him', 'them', 'us', 'what', 'which', 'who', 'whom', 'https', 'http', 'co', 'rt', 'like', 'get', 'got', 'dont', 'im', 'ive', 'youre', 'cant', 'wont', 'didnt', 'doesnt', 'isnt', 'arent', 'wasnt', 'werent', 'hasnt', 'havent', 'hadnt', 'shouldnt', 'couldnt', 'wouldnt', 'mustnt', 'lets', 'thats', 'whats', 'heres', 'theres', 'wheres', 'whens', 'hows', 'whys', 've', 're', 'll', 'd', 's', 't', 'm', 'o', 'y', 've']);
+            
+            if (!tweets || tweets.length === 0) return topics;
+            
+            tweets.forEach(tweet => {
+                if (!tweet.text) return;
+                
+                const text = tweet.text.toLowerCase();
+                
+                // Extract hashtags only - they are the most meaningful topics
+                const hashtags = text.match(/#[a-z0-9_]+/g) || [];
+                hashtags.forEach(tag => {
+                    const topicName = tag;
+                    if (!topics[topicName]) {
+                        topics[topicName] = { name: topicName, action_count: 0, items: [] };
+                    }
+                    topics[topicName].action_count++;
+                    if (topics[topicName].items.length < 20) {
+                        topics[topicName].items.push({
+                            id: tweet.id || 'tweet-' + Math.random(),
+                            text: tweet.text,
+                            date: tweet.created_at ? new Date(tweet.created_at).toISOString().split('T')[0] : '',
+                            title: tweet.text.substring(0, 50) + (tweet.text.length > 50 ? '...' : '')
+                        });
+                    }
+                });
+            });
+            
+            // Sort topics by action count and take top 50
+            const sortedTopics = Object.entries(topics)
+                .sort((a, b) => b[1].action_count - a[1].action_count)
+                .slice(0, 50);
+            
+            return Object.fromEntries(sortedTopics);
+        }
+        
+        function loadGraphData() {
+            console.log('loadGraphData called');
+            // Try localStorage first
+            try {
+                const saved = localStorage.getItem('xkg_graph_data');
+                if (saved) {
+                    const data = JSON.parse(saved);
+                    // Accept data if it has nodes, regardless of timestamp (or if no timestamp)
+                    if (data.nodes && data.nodes.length > 0) {
+                        graphData.nodes = data.nodes || [];
+                        graphData.edges = data.edges || [];
+                        console.log('Loaded from localStorage:', graphData.nodes.length, 'nodes');
+                        return true;
+                    }
+                }
+            } catch(e) { console.warn('localStorage error:', e); }
+            
+            // Fetch from API
+            fetch('/api/graph')
+                .then(r => { console.log('API response:', r.status); return r.json(); })
+                .then(data => { 
+                    console.log('API data nodes:', data.nodes ? data.nodes.length : 0);
+                    if (data.nodes && data.nodes.length > 0) {
+                        graphData.nodes = data.nodes;
+                        graphData.edges = data.edges || [];
+                        console.log('Set graphData:', graphData.nodes.length, 'nodes');
+                        renderGraph();
+                    }
+                })
+                .catch(e => console.error('Failed to fetch graph:', e));
+            return false;
+        }
+
+function handleFolderSelect(input, type) {
+    if (input.files && input.files[0]) {
+        // Get the folder path - try multiple approaches for cross-browser compatibility
+        var fullPath = '';
+        
+        // Try the .path property first (works in Electron)
+        if (input.files[0].path) {
+            fullPath = input.files[0].path;
+        } 
+        // Try webkitRelativePath as fallback
+        else if (input.files[0].webkitRelativePath) {
+            var relPath = input.files[0].webkitRelativePath;
+            // Extract folder name from relative path (e.g., "data/" -> "data")
+            var folderName = relPath.split('/')[0];
+            // Try to combine with input.value if available
+            if (input.value) {
+                // input.value typically contains the path in folder selection dialogs
+                fullPath = input.value + '/' + folderName;
+            } else {
+                fullPath = folderName;
+            }
+        }
+        // Fallback to input value
+        else {
+            fullPath = input.value;
+        }
+        
+        // Update the text input field with the selected path
+        var pathFieldId = type === 'x' ? 'x-folder-path' : 'grok-folder-path';
+        var pathField = document.getElementById(pathFieldId);
+        if (pathField) {
+            pathField.value = fullPath;
+        }
+        
+        // Also save to localStorage for persistence
+        localStorage.setItem('xkg_' + type + '_path', fullPath);
+        
+        console.log('Folder selected for', type + ':', fullPath);
+    }
+}
+
+
+        // State
+        // graphData is already defined at the top of the script
+        let timelineData = [];
+        let actions = [];
+        let topics = {};
+        let conversations = [];
+        let currentView = 'list';
+        let currentLayout = 'force';
+        let zoomLevel = 1;
+        let nodePositions = {};
+
+        const API_BASE = '';
+
+        // Initialize - load persisted data if available
+        (async function initState() {
+            // First try localStorage
+            let dataLoaded = loadGraphData();
+            
+            // If no localStorage data, try fetching from API
+            if (!dataLoaded) {
+                try {
+                    const response = await fetch('/api/graph');
+                    if (response.ok) {
+                        const data = await response.json();
+                        if (data.nodes && data.nodes.length > 0) {
+                            graphData = data;
+                            dataLoaded = true;
+                        }
+                    }
+                } catch(e) { console.warn('API fetch failed:', e); }
+            }
+            
+            // Always fetch fresh counts from API
+            async function loadDataSummary() {
+                try {
+                    const response = await fetch('/api/data/summary?t=' + Date.now());
+                    const data = await response.json();
+                    
+                    const tweetsCount = data.tweets || 0;
+                    const convosCount = data.conversations || 0;
+                    const likesCount = data.likes || 0;
+                    
+                    // Update counts in UI (always fresh from API)
+                    document.getElementById('tree-tweets-count').textContent = tweetsCount;
+                    document.getElementById('tree-convos-count').textContent = convosCount;
+                    document.getElementById('list-count').textContent = tweetsCount;
+                    
+                    // Save to localStorage as backup (but UI uses API values)
+                    localStorage.setItem('xkg_tweets_count', tweetsCount);
+                    localStorage.setItem('xkg_conversations_count', convosCount);
+                    
+                    return data;
+                } catch(e) {
+                    console.warn('API fetch failed:', e);
+                    // Fallback to localStorage only if API fails
+                    const tweetsCount = localStorage.getItem('xkg_tweets_count') || 0;
+                    const convosCount = localStorage.getItem('xkg_conversations_count') || 0;
+                    document.getElementById('tree-tweets-count').textContent = tweetsCount;
+                    document.getElementById('tree-convos-count').textContent = convosCount;
+                    return null;
+                }
+            }
+                
+            // Also render the current view
+            setTimeout(() => {
+                if (currentView === 'list') {
+                    renderList();
+                    } else if (currentView === 'graph') {
+                        renderGraph();
+                    }
+                }, 100);
+            
+            // Load data from server cache on startup (if not already loaded)
+            loadDataSummary().then(() => {
+                // Auto-load first data type (default to Grok/X)
+                loadDataType('grokx');
+            });
+        })();
+
+        // Theme State
+        let currentTheme = 'dark';
+
+        // Theme Toggle
+        function toggleTheme() {
+            currentTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            applyTheme();
+            saveThemePreference();
+        }
+
+        function applyTheme() {
+            document.documentElement.setAttribute('data-theme', currentTheme);
+            const icon = document.getElementById('theme-icon');
+            icon.textContent = currentTheme === 'dark' ? '🌙' : '☀️';
+        }
+
+        function loadThemePreference() {
+            const savedTheme = localStorage.getItem('xkg_theme');
+            if (savedTheme && (savedTheme === 'light' || savedTheme === 'dark')) {
+                currentTheme = savedTheme;
+            } else {
+                // Check system preference
+                if (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) {
+                    currentTheme = 'light';
+                }
+            }
+            applyTheme();
+        }
+
+        function saveThemePreference() {
+            localStorage.setItem('xkg_theme', currentTheme);
+        }
+
+        // DOM Elements
+        const els = {
+            details: document.getElementById('details-content'),
+            statsSection: document.getElementById('stats-section')
+        };
+
+        // ==================== DATA TYPE TREE FUNCTIONS ====================
+        function toggleTreeItem(el) {
+            var toggle = el.querySelector('.tree-toggle');
+            var children = el.nextElementSibling;
+            if (children && children.classList.contains('tree-children')) {
+                toggle.classList.toggle('expanded');
+                toggle.textContent = toggle.classList.contains('expanded') ? '▼' : '▶';
+                children.style.display = children.style.display === 'none' ? 'block' : 'none';
+            }
+        }
+        
+        function selectDataType(type, el) {
+            console.log('selectDataType called with:', type);
+            // Remove selected from all tree items
+            document.querySelectorAll('.data-type-tree .tree-item').forEach(function(item) {
+                item.style.background = '';
+            });
+            
+            // Add selected to clicked
+            el.style.background = 'rgba(29, 155, 240, 0.15)';
+            
+            // Call the existing loadDataType function
+            loadDataType(type);
+        }
+        
+        // Update tree counts when data loads
+        function updateTreeCounts(data) {
+            if (!data) return;
+            
+            // Count tweet types
+            var tweetCount = 0, replyCount = 0, retweetCount = 0, bookmarkCount = 0;
+            var grokCount = 0, grokxCount = 0;
+            
+            if (data.tweets) {
+                data.tweets.forEach(function(t) {
+                    var text = t.text || '';
+                    if (text.startsWith('RT @')) retweetCount++;
+                    else if (text.startsWith('@')) replyCount++;
+                    else tweetCount++;
+                });
+            }
+            
+            if (data.likes) bookmarkCount = data.likes.length;
+            if (data.conversations) {
+                data.conversations.forEach(function(c) {
+                    if (c.grokType === 'grokx') grokxCount++;
+                    else grokCount++;
+                });
+            }
+            
+            // Update counts in tree
+            var counts = {
+                'tree-tweets-count': tweetCount + replyCount + retweetCount,
+                'tree-tweet-count': tweetCount,
+                'tree-reply-count': replyCount,
+                'tree-retweet-count': retweetCount,
+                'tree-bookmark-count': bookmarkCount,
+                'tree-convos-count': grokCount + grokxCount,
+                'tree-grok-count': grokCount,
+                'tree-grokx-count': grokxCount
+            };
+            
+            for (var id in counts) {
+                var el = document.getElementById(id);
+                if (el) el.textContent = counts[id].toLocaleString();
+            }
+        }
+        
+        // Update tree counts from API
+        async function updateTreeCountsFromAPI() {
+            console.log('Updating tree counts...');
+            try {
+                // Fetch all data types to count
+                const [tweetsRes, likesRes, convosRes] = await Promise.all([
+                    fetch('/api/data/tweets'),
+                    fetch('/api/data/likes'),
+                    fetch('/api/data/conversations')
+                ]);
+                
+                const tweets = await tweetsRes.json();
+                const likes = await likesRes.json();
+                const convos = await convosRes.json();
+                
+                // Store conversations data for views
+                if (convos.data) {
+                    conversations = convos.data;
+                    console.log('Loaded conversations:', conversations.length);
+                }
+                
+                var tweetCount = 0, replyCount = 0, retweetCount = 0;
+                (tweets.data || []).forEach(function(t) {
+                    var text = (t.text || '').trim();
+                    // Check for RT @ prefix (retweet)
+                    if (text.indexOf('RT @') === 0 || text.indexOf('RT@') === 0) retweetCount++;
+                    // Check for @ prefix at start (reply)
+                    else if (text.indexOf('@') === 0) replyCount++;
+                    else tweetCount++;
+                });
+                
+                var grokCount = 0, grokxCount = 0;
+                (convos.data || []).forEach(function(c) {
+                    if (c.grokType === 'grokx') grokxCount++;
+                    else grokCount++;
+                });
+                
+                // Update counts
+                var likesCount = (likes.data || []).length;
+                var bookmarkCount = 0;
+                var counts = {
+                    'tree-tweets-count': tweetCount + replyCount + retweetCount + likesCount + bookmarkCount,
+                    'tree-tweet-count': tweetCount,
+                    'tree-reply-count': replyCount,
+                    'tree-retweet-count': retweetCount,
+                    'tree-likes-count': likesCount,
+                    'tree-bookmark-count': bookmarkCount,
+                    'tree-convos-count': grokCount + grokxCount,
+                    'tree-grok-count': grokCount,
+                    'tree-grokx-count': grokxCount
+                };
+                
+                for (var id in counts) {
+                    var el = document.getElementById(id);
+                    if (el) el.textContent = counts[id].toLocaleString();
+                }
+            } catch (e) {
+                console.error('Error updating tree counts:', e);
+            }
+        }
+        
+        
+        // ==================== BOOKMARK SYSTEM ====================
+        let bookmarks = [];
+        
+        async function loadBookmarks() {
+            try {
+                const response = await fetch('/api/user-data');
+                const data = await response.json();
+                bookmarks = data.bookmarks || [];
+            } catch(e) {
+                console.error('Failed to load bookmarks:', e);
+            }
+        }
+        loadBookmarks();
+        
+        function isBookmarked(itemId) {
+            return bookmarks.includes(itemId);
+        }
+        
+        async function toggleBookmark(itemId) {
+            try {
+                const response = await fetch('/api/user-data/bookmark/' + itemId, {method: 'POST'});
+                const result = await response.json();
+                await loadBookmarks();
+                loadDataType(currentDataType); // Refresh view
+            } catch(e) {
+                console.error('Failed to toggle bookmark:', e);
+            }
+        }
+        
+        // ==================== TAGGING SYSTEM (API-backed) ====================
+        let userData = {
+            conversation_tags: {},
+            conversation_notes: {},
+            conversation_stars: {},
+            tweet_tags: {},
+            tweet_stars: {}
+        };
+        
+        // Load user data from API on startup
+        async function loadUserData() {
+            try {
+                const response = await fetch('/api/user-data');
+                userData = await response.json();
+                console.log('Loaded user data:', Object.keys(userData).length, 'keys');
+            } catch(e) {
+                console.error('Failed to load user data:', e);
+            }
+        }
+        loadUserData();
+        
+        function getTags(itemId) {
+            // Check both conversation and tweet tags
+            return userData.conversation_tags[itemId] || userData.tweet_tags[itemId] || [];
+        }
+        
+        function getAiTags(itemId) {
+            return []; // AI tags not implemented yet
+        }
+        
+        async function addTag(itemId, tag, isAi) {
+            // Determine if conversation or tweet based on current data type
+            const isConversation = currentDataType === 'grok' || currentDataType === 'grokx';
+            const endpoint = isConversation 
+                ? `/api/user-data/conversation/${itemId}/tags`
+                : `/api/user-data/tweet/${itemId}/tags`;
+            
+            try {
+                const response = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({tag: tag})
+                });
+                const result = await response.json();
+                
+                // Reload user data to get updated tags
+                await loadUserData();
+                
+                // Refresh display
+                loadDataType(currentDataType);
+            } catch(e) {
+                console.error('Failed to add tag:', e);
+            }
+        }
+        
+        async function removeTag(itemId, tag, isAi) {
+            const isConversation = currentDataType === 'grok' || currentDataType === 'grokx';
+            const endpoint = isConversation 
+                ? `/api/user-data/conversation/${itemId}/tags/${tag}`
+                : `/api/user-data/tweet/${itemId}/tags/${tag}`;
+            
+            try {
+                const response = await fetch(endpoint, {method: 'DELETE'});
+                await loadUserData();
+                loadDataType(currentDataType);
+            } catch(e) {
+                console.error('Failed to remove tag:', e);
+            }
+        }
+        
+        async function starItem(itemId) {
+            const isConversation = currentDataType === 'grok' || currentDataType === 'grokx';
+            const endpoint = isConversation 
+                ? `/api/user-data/conversation/${itemId}/star`
+                : `/api/user-data/tweet/${itemId}/star`;
+            
+            try {
+                const response = await fetch(endpoint, {method: 'POST'});
+                await loadUserData();
+                loadDataType(currentDataType);
+            } catch(e) {
+                console.error('Failed to star:', e);
+            }
+        }
+        
+        function isStarred(itemId) {
+            return userData.conversation_stars[itemId] || userData.tweet_stars[itemId];
+        }
+        
+        function showAddTagDialog(itemId, isAi) {
+            const tag = prompt('Enter tag name:');
+            if (tag && tag.trim()) {
+                addTag(itemId, tag.trim(), isAi);
+            }
+        }
+        
+        
+        function showConversationDetails(item) {
+            // Build messages HTML
+            let messagesHtml = '';
+            if (item.messages && item.messages.length > 0) {
+                messagesHtml = '<div style="margin-top:12px;max-height:300px;overflow-y:auto;">';
+                item.messages.forEach((msg, idx) => {
+                    const content = msg.content || {};
+                    const text = content.text || '';
+                    const attachments = content.attachments || [];
+                    const sender = msg.sender || 'User';
+                    const time = msg.created_at ? new Date(msg.created_at).toLocaleString() : '';
+                    
+                    // Build attachment HTML (images)
+                    let attachmentHtml = '';
+                    attachments.forEach(att => {
+                        if (att.type === 'image' || att.url) {
+                            attachmentHtml += `<img src="${att.url}" style="max-width:200px;margin:4px;border-radius:4px;" />`;
+                        }
+                    });
+                    
+                    messagesHtml += `<div style="margin:8px 0;padding:8px;background:rgba(255,255,255,0.05);border-radius:4px;">
+                        <div style="color:#1d9bf0;font-weight:bold;font-size:12px;">${sender} <span style="color:#71767b;">${time}</span></div>
+                        <div style="color:#e7e9ea;margin-top:4px;">${text.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>
+                        ${attachmentHtml ? `<div style="margin-top:4px;">${attachmentHtml}</div>` : ''}
+                    </div>`;
+                });
+                messagesHtml += '</div>';
+            }
+            
+            const details = '<div style="color:#fff;margin-bottom:12px;">' +
+                '<strong>' + (item.title || 'Untitled') + '</strong><br><br>' +
+                '<span style="color:#71767b;">ID:</span> ' + (item.id || 'N/A') + '<br>' +
+                '<span style="color:#71767b;">Type:</span> ' + (item.grokType || 'unknown') + '<br>' +
+                '<span style="color:#71767b;">Messages:</span> ' + (item.messages ? item.messages.length : 0) + '<br>' +
+                '<span style="color:#71767b;">Tags:</span> ' + (getTags(item.id) || []).join(', ') + '<br>' +
+                '<span style="color:#71767b;">Created:</span> ' + (item.created_at || 'N/A') + '<br>' +
+                '</div>' + messagesHtml;
+            document.getElementById('details-content').innerHTML = details;
+            document.getElementById('details-panel').style.display = 'block';
+        }
+function renderTagsHtml(itemId) {
+            const tags = getTags(itemId);
+            const ai = getAiTags(itemId);
+            const allTags = [...tags, ...ai];
+            if (allTags.length === 0) return '';
+            return '<div class="item-tags" style="margin-top:4px;display:flex;flex-wrap:wrap;gap:4px;">' + 
+                allTags.map(t => '<span class="item-tag" style="background:#1d9bf0;color:#fff;padding:2px 6px;border-radius:10px;font-size:10px;">' + t + 
+                    '<span onclick="event.stopPropagation();removeTag(\'' + itemId + '\',\'' + t + '\',' + (ai.includes(t) ? 'true' : 'false') + ')" style="cursor:pointer;margin-left:4px;">×</span></span>').join('') +
+                '</div>';
+        }
+        
+        function renderAddTagButtons(itemId) {
+            return '<span style="margin-left:8px;cursor:pointer;font-size:12px;opacity:0.5;" onclick="event.stopPropagation();showAddTagDialog(\'' + itemId + '\', false)" title="Add tag">+tag</span>';
+        }
+// ==================== DATA TYPE LOADING ====================
+        
+        let currentDataType = 'grokx';
+        let loadedDataItems = [];
+        
+        async function loadDataType(type) {
+            var container = document.getElementById('list-content');
+            if (container) container.innerHTML = '<div style="padding:20px;color:#1d9bf0;">Loading ' + type + ' data...</div>';
+            console.log('Loading data type:', type);
+            
+            // Clear search cache when switching data types
+            searchCache = {};
+            
+            // Map subtypes to API endpoints
+            var apiType = type;
+            if (['tweet', 'reply', 'retweet', 'bookmark'].includes(type)) {
+                apiType = 'tweets';  // Get all tweets, then filter
+            } else if (['grok', 'grokx'].includes(type)) {
+                apiType = 'conversations';  // Get all conversations, then filter
+            } else if (type === 'likes') {
+                apiType = 'likes';  // Get likes directly
+            }
+            
+            try {
+                console.log('DEBUG: Fetching /api/data/' + apiType);
+                const response = await fetch(`/api/data/${apiType}?t=${Date.now()}`);
+                const result = await response.json();
+                
+                console.log('DEBUG: Got response, count:', result.count);
+                
+                var allItems = result.data || [];
+                console.log('DEBUG: allItems length:', allItems.length);
+                // Count grok vs grokx
+                var grokCount = allItems.filter(function(c) { return c.grokType !== 'grokx'; }).length;
+                var grokxCount = allItems.filter(function(c) { return c.grokType === 'grokx'; }).length;
+                console.log('In allItems - grok:', grokCount, 'grokx:', grokxCount);
+                
+                // Filter by subtype if needed
+                if (type === 'tweet') {
+                    loadedDataItems = allItems.filter(function(t) {
+                        var text = t.text || '';
+                        return !text.startsWith('RT @') && !text.startsWith('@');
+                    });
+                } else if (type === 'reply') {
+                    loadedDataItems = allItems.filter(function(t) {
+                        var text = t.text || '';
+                        return text.startsWith('@');
+                    });
+                } else if (type === 'retweet') {
+                    loadedDataItems = allItems.filter(function(t) {
+                        var text = t.text || '';
+                        return text.startsWith('RT @');
+                    });
+                } else if (type === 'bookmark') {
+                    // Bookmarks are from likes API
+                    const bmResponse = await fetch('/api/data/likes');
+                    const bmResult = await bmResponse.json();
+                    loadedDataItems = bmResult.data || [];
+                } else if (type === 'likes') {
+                    // Likes
+                    const likesResponse = await fetch('/api/data/likes');
+                    const likesResult = await likesResponse.json();
+                    loadedDataItems = likesResult.data || [];
+                } else if (type === 'grok') {
+                    // Force filter to get ALL grok items
+                    loadedDataItems = allItems.filter(function(c) {
+                        var isGrok = c.grokType !== 'grokx';
+                        return isGrok;
+                    });
+                    console.log('Grok filter: allItems=' + allItems.length + ', loaded=' + loadedDataItems.length);
+                } else if (type === 'grokx') {
+                    loadedDataItems = allItems.filter(function(c) {
+                        return c.grokType === 'grokx';
+                    });
+                } else {
+                    loadedDataItems = allItems;
+                }
+                
+                console.log(`Loaded ${loadedDataItems.length} ${type}`);
+                
+                // Update tree counts
+                updateTreeCountsFromAPI();
+                
+                // Update the view counts
+                document.getElementById('list-count').textContent = loadedDataItems.length;
+                document.getElementById('graph-count').textContent = loadedDataItems.length;
+                
+                // Re-render current view if we're already on a view
+                if (currentView === 'list') {
+                    renderList();
+                } else if (currentView === 'graph') {
+                    renderGraph();
+                }
+                
+                // If List view is selected, show data there
+                if (loadedDataItems.length > 0) {
+                    // Auto-switch to list view to show data
+                    // switchView('list'); // Optional: auto-switch
+                }
+                
+            } catch (e) {
+                console.error('Error loading data type:', e);
+            }
+        }
+        
+        // ==================== SEARCH ====================
+        
+        let searchCache = {};
+        
+        async function handleSearch(query) {
+            const resultsContainer = document.getElementById('search-results');
+            if (!query || query.length < 2) {
+                resultsContainer.innerHTML = '';
+                return;
+            }
+            
+            // Split query into words for more dynamic filtering
+            const queryWords = query.toLowerCase().split(/\s+/).filter(w => w.length > 0);
+            
+            let results = [];
+            
+            // Search in all data types
+            const dataTypes = ['tweets', 'likes', 'conversations'];
+            
+            for (const dtype of dataTypes) {
+                if (!searchCache[dtype]) {
+                    try {
+                        const response = await fetch(`/api/data/${dtype}`);
+                        const data = await response.json();
+                        if (data.data) {
+                            searchCache[dtype] = data.data;
+                        }
+                    } catch(e) {
+                        console.log('Failed to load', dtype);
+                    }
+                }
+                
+                const items = searchCache[dtype] || [];
+                items.forEach(item => {
+                    let text = '';
+                    if (item.text) text = item.text;
+                    else if (item.title) text = item.title;
+                    else if (item.content?.text) text = item.content.text;
+                    
+                    const textLower = text.toLowerCase();
+                    
+                    // Check if ALL query words are in the text (AND logic)
+                    const allWordsFound = queryWords.every(word => textLower.includes(word));
+                    
+                    if (allWordsFound) {
+                        // Calculate relevance score (more words = higher)
+                        const matchCount = queryWords.filter(word => textLower.includes(word)).length;
+                        results.push({
+                            type: dtype,
+                            text: text.substring(0, 100),
+                            id: item.id,
+                            title: item.title || text.substring(0, 40),
+                            score: matchCount
+                        });
+                    }
+                });
+            }
+            
+            // Sort by relevance score (most matches first)
+            results.sort((a, b) => b.score - a.score);
+            
+            // Show top 20 results
+            results = results.slice(0, 20);
+            
+            if (results.length === 0) {
+                resultsContainer.innerHTML = '<div style="color: var(--text-secondary); font-size: 12px;">No results found</div>';
+            } else {
+                resultsContainer.innerHTML = results.map(r => 
+                    `<div style="padding: 8px; border-bottom: 1px solid var(--border-color); cursor: pointer;" onclick="selectSearchResult('${r.type}', '${r.id}')">
+                        <div style="font-size: 10px; color: #1d9bf0; text-transform: uppercase;">${r.type}</div>
+                        <div style="font-size: 12px; color: var(--text-primary);">${r.title}...</div>
+                        <div style="font-size: 11px; color: var(--text-secondary);">${r.text}...</div>
+                    </div>`
+                ).join('');
+            }
+        }
+        
+        async function selectSearchResult(type, id) {
+            // Switch to the data type and find the item
+            currentDataType = type;
+            
+            // Fetch data for this type
+            try {
+                const response = await fetch(`/api/data/${type}`);
+                const data = await response.json();
+                loadedDataItems = data.data || [];
+                
+                // Render the list
+                renderList();
+                
+                // For conversations, expand and scroll to the item
+                if (type === 'grok' || type === 'grokx') {
+                    // Find and expand the conversation
+                    setTimeout(() => {
+                        const convElement = document.querySelector(`[data-conv-id="${id}"]`);
+                        if (convElement) {
+                            // Click to expand if not expanded
+                            if (!convElement.classList.contains('expanded')) {
+                                convElement.click();
+                            }
+                            // Scroll to it
+                            convElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        }
+                    }, 300);
+                }
+                
+                // Clear search
+                document.getElementById('global-search').value = '';
+                document.getElementById('search-results').innerHTML = '';
+            } catch(e) {
+                console.error('Failed to load:', e);
+            }
+        }
+
+        // ==================== VIEW NAVIGATION ====================
+
+        function switchView(viewName) {
+            currentView = viewName;
+            
+            // Update nav tabs
+            document.querySelectorAll('.nav-tab').forEach(tab => {
+                tab.classList.toggle('active', tab.dataset.view === viewName);
+            });
+            
+            // Update view containers
+            document.querySelectorAll('.view-container').forEach(container => {
+                container.classList.toggle('active', container.id === `view-${viewName}`);
+            });
+            
+            // Save state
+            localStorage.setItem('xkg_current_view', viewName);
+            
+            // Render current view
+            renderCurrentView();
+        }
+
+        function renderCurrentView() {
+            switch(currentView) {
+                case 'list': renderList(); break;
+                case 'graph': renderGraph(); break;
+                case 'timeline': renderTimeline(); break;
+                case 'taskboard': renderTaskBoard(); break;
+                case 'clusters': renderClusters(); break;
+                case 'conversation': renderConversation(); break;
+            }
+        }
+
+        // ==================== GRAPH VIEW ====================
+
+        const layouts = {
+            force: function(nodes, edges, width, height) {
+                const positions = {};
+                const padding = 60;
+                const areaWidth = width - padding * 2;
+                const areaHeight = height - padding * 2;
+                
+                nodes.forEach((node, i) => {
+                    positions[node.id] = {
+                        x: padding + Math.random() * areaWidth,
+                        y: padding + Math.random() * areaHeight
+                    };
+                });
+                
+                const iterations = 100;
+                const repulsion = 5000;
+                const springLength = 80;
+                const springStrength = 0.05;
+                
+                for (let iter = 0; iter < iterations; iter++) {
+                    nodes.forEach(node1 => {
+                        nodes.forEach(node2 => {
+                            if (node1.id === node2.id) return;
+                            const dx = positions[node1.id].x - positions[node2.id].x;
+                            const dy = positions[node1.id].y - positions[node2.id].y;
+                            const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+                            const force = repulsion / (dist * dist);
+                            positions[node1.id].x += (dx / dist) * force;
+                            positions[node1.id].y += (dy / dist) * force;
+                        });
+                    });
+                    
+                    edges.forEach(edge => {
+                        if (positions[edge.source] && positions[edge.target]) {
+                            const dx = positions[edge.target].x - positions[edge.source].x;
+                            const dy = positions[edge.target].y - positions[edge.source].y;
+                            const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+                            const force = (dist - springLength) * springStrength;
+                            positions[edge.source].x += (dx / dist) * force;
+                            positions[edge.source].y += (dy / dist) * force;
+                            positions[edge.target].x -= (dx / dist) * force;
+                            positions[edge.target].y -= (dy / dist) * force;
+                        }
+                    });
+                    
+                    const centerX = width / 2;
+                    const centerY = height / 2;
+                    nodes.forEach(node => {
+                        positions[node.id].x += (centerX - positions[node.id].x) * 0.01;
+                        positions[node.id].y += (centerY - positions[node.id].y) * 0.01;
+                    });
+                }
+                
+                return positions;
+            },
+            
+            hierarchical: function(nodes, edges, width, height) {
+                const positions = {};
+                const padding = 80;
+                const levels = {};
+                const levelOrder = { topic: 0, action: 1, tweet: 2, user: 3 };
+                
+                nodes.forEach(node => {
+                    const level = levelOrder[node.type] || 2;
+                    if (!levels[level]) levels[level] = [];
+                    levels[level].push(node.id);
+                });
+                
+                const numLevels = Object.keys(levels).length;
+                const levelHeight = (height - padding * 2) / (numLevels - 1 || 1);
+                
+                Object.keys(levels).forEach(level => {
+                    const levelNodes = levels[level];
+                    const levelY = padding + (parseInt(level) * levelHeight);
+                    const nodeSpacing = (width - padding * 2) / (levelNodes.length + 1);
+                    
+                    levelNodes.forEach((nodeId, i) => {
+                        positions[nodeId] = {
+                            x: padding + nodeSpacing * (i + 1),
+                            y: levelY
+                        };
+                    });
+                });
+                
+                return positions;
+            },
+            
+            circular: function(nodes, edges, width, height) {
+                const positions = {};
+                const centerX = width / 2;
+                const centerY = height / 2;
+                const radius = Math.min(width, height) / 3;
+                
+                nodes.forEach((node, i) => {
+                    const angle = (i / nodes.length) * 2 * Math.PI - Math.PI / 2;
+                    positions[node.id] = {
+                        x: centerX + radius * Math.cos(angle),
+                        y: centerY + radius * Math.sin(angle)
+                    };
+                });
+                
+                return positions;
+            },
+            
+            radial: function(nodes, edges, width, height) {
+                const positions = {};
+                const centerX = width / 2;
+                const centerY = height / 2;
+                const topicNodes = nodes.filter(n => n.type === 'topic');
+                const actionNodes = nodes.filter(n => n.type === 'action');
+                const tweetNodes = nodes.filter(n => n.type === 'tweet');
+                
+                const topicRadius = Math.min(width, height) / 6;
+                topicNodes.forEach((node, i) => {
+                    const angle = (i / topicNodes.length) * 2 * Math.PI - Math.PI / 2;
+                    positions[node.id] = {
+                        x: centerX + topicRadius * Math.cos(angle),
+                        y: centerY + topicRadius * Math.sin(angle)
+                    };
+                });
+                
+                const actionRadius = Math.min(width, height) / 3;
+                actionNodes.forEach((node, i) => {
+                    const angle = (i / actionNodes.length) * 2 * Math.PI;
+                    positions[node.id] = {
+                        x: centerX + actionRadius * Math.cos(angle),
+                        y: centerY + actionRadius * Math.sin(angle)
+                    };
+                });
+                
+                const tweetRadius = Math.min(width, height) / 2.2;
+                tweetNodes.forEach((node, i) => {
+                    const angle = (i / tweetNodes.length) * 2 * Math.PI;
+                    positions[node.id] = {
+                        x: centerX + tweetRadius * Math.cos(angle),
+                        y: centerY + tweetRadius * Math.sin(angle)
+                    };
+                });
+                
+                return positions;
+            },
+            
+            grid: function(nodes, edges, width, height) {
+                const positions = {};
+                const padding = 60;
+                const cols = Math.ceil(Math.sqrt(nodes.length));
+                const cellWidth = (width - padding * 2) / cols;
+                const cellHeight = (height - padding * 2) / Math.ceil(nodes.length / cols);
+                
+                nodes.forEach((node, i) => {
+                    const row = Math.floor(i / cols);
+                    const col = i % cols;
+                    positions[node.id] = {
+                        x: padding + col * cellWidth + cellWidth / 2,
+                        y: padding + row * cellHeight + cellHeight / 2
+                    };
+                });
+                
+                return positions;
+            }
+        };
+
+        function renderGraph() {
+            const container = document.getElementById('view-graph');
+            
+            // Check if Cytoscape is available
+            if (typeof cytoscape === 'undefined') {
+                document.getElementById('graph-info').textContent = 'Cytoscape.js not loaded';
+                return;
+            }
+            
+            if (!graphData.nodes || graphData.nodes.length === 0) {
+                document.getElementById('graph-info').textContent = 'No graph data - Parse an export first';
+                return;
+            }
+
+            // Filter nodes for performance
+            const MAX_NODES = 200;
+            const typeFilter = document.getElementById('node-type-filter').value;
+            let filteredNodes = graphData.nodes.slice(0, MAX_NODES);
+            if (typeFilter !== 'all') {
+                filteredNodes = graphData.nodes.filter(n => n.type === typeFilter).slice(0, MAX_NODES);
+            }
+            
+            const nodeIds = new Set(filteredNodes.map(n => n.id));
+            const filteredEdges = graphData.edges.filter(e => nodeIds.has(e.source) && nodeIds.has(e.target));
+
+            // Convert to Cytoscape format
+            const cyElements = [
+                ...filteredNodes.map(n => ({
+                    data: { 
+                        id: n.id, 
+                        label: n.label?.substring(0, 20) || n.type,
+                        type: n.type 
+                    }
+                })),
+                ...filteredEdges.map((e, i) => ({
+                    data: { 
+                        id: `edge-${i}`,
+                        source: e.source, 
+                        target: e.target 
+                    }
+                }))
+            ];
+
+            // Check if we already have a Cytoscape instance
+            let cy = cytoscape.getElementById('xkg-graph');
+            
+            if (cy) {
+                cy.destroy();
+            }
+
+            // Create new Cytoscape instance
+            cy = cytoscape({
+                container: document.getElementById('graph-container'),
+                elements: cyElements,
+                style: [
+                    {
+                        selector: 'node',
+                        style: {
+                            'background-color': 'data(type) === "tweet" ? "#3498db" : data(type) === "action" ? "#e94560" : data(type) === "topic" ? "#00d9ff" : "#9b59b6"',
+                            'label': 'data(label)',
+                            'color': '#ccc',
+                            'font-size': '10px',
+                            'text-valign': 'bottom',
+                            'text-margin-y': 5,
+                            'width': 'data(type) === "topic" ? 40 : 20',
+                            'height': 'data(type) === "topic" ? 40 : 20'
+                        }
+                    },
+                    {
+                        selector: 'edge',
+                        style: {
+                            'width': 1,
+                            'line-color': '#444',
+                            'opacity': 0.5
+                        }
+                    },
+                    {
+                        selector: ':selected',
+                        style: {
+                            'border-width': 2,
+                            'border-color': '#fff'
+                        }
+                    }
+                ],
+                layout: {
+                    name: 'cose',  // Force-directed layout
+                    animate: true,
+                    animationDuration: 500
+                },
+                minZoom: 0.1,
+                maxZoom: 5,
+                wheelSensitivity: 0.3
+            });
+
+            // Store reference
+            cy.id('xkg-graph');
+            
+            // Add click handler
+            cy.on('tap', 'node', function(evt){
+                const node = evt.target;
+                showNodeDetails(node.data());
+            });
+
+            // Update info
+            document.getElementById('graph-info').textContent = `Showing ${Math.min(MAX_NODES, graphData.nodes.length)} of ${graphData.nodes.length} nodes • ${filteredEdges.length} edges`;
+            document.getElementById('graph-count').textContent = filteredNodes.length;
+        }
+
+        function showNodeDetails(nodeData) {
+            console.log('Node clicked:', nodeData);
+            // Could show details in sidebar
+        }
+
+            // Draw edges
+            filteredEdges.forEach(edge => {
+                if (nodePositions[edge.source] && nodePositions[edge.target]) {
+                    const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                    line.setAttribute('x1', nodePositions[edge.source].x);
+                    line.setAttribute('y1', nodePositions[edge.source].y);
+                    line.setAttribute('x2', nodePositions[edge.target].x);
+                    line.setAttribute('y2', nodePositions[edge.target].y);
+                    line.setAttribute('class', 'graph-edge');
+                    svg.appendChild(line);
+                }
+            });
+
+            // Draw nodes
+            filteredNodes.forEach(node => {
+                if (!nodePositions[node.id]) return;
+                const pos = nodePositions[node.id];
+
+                const group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+                group.setAttribute('class', 'graph-node');
+                group.setAttribute('data-id', node.id);
+
+                const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                circle.setAttribute('cx', pos.x);
+                circle.setAttribute('cy', pos.y);
+                circle.setAttribute('r', sizes[node.type] || 12);
+                circle.setAttribute('fill', colors[node.type] || '#666');
+                
+                circle.addEventListener('mouseenter', () => {
+                    circle.setAttribute('stroke', '#00d9ff');
+                    circle.setAttribute('stroke-width', '3');
+                    showTooltip(node, pos.x, pos.y);
+                });
+                circle.addEventListener('mouseleave', () => {
+                    circle.setAttribute('stroke', '#fff');
+                    circle.setAttribute('stroke-width', '2');
+                    hideTooltip();
+                });
+                circle.addEventListener('click', () => selectNode(node));
+
+                const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                text.setAttribute('x', pos.x);
+                text.setAttribute('y', pos.y + (sizes[node.type] || 12) + 15);
+                text.setAttribute('text-anchor', 'middle');
+                text.setAttribute('fill', '#ccc');
+                text.setAttribute('font-size', '10');
+                text.textContent = node.label ? node.label.substring(0, 15) : node.type;
+
+                group.appendChild(circle);
+                group.appendChild(text);
+                svg.appendChild(group);
+            });
+
+            document.getElementById('graph-count').textContent = filteredNodes.length;
+            document.getElementById('graph-info').textContent = 
+                `${filteredNodes.length} nodes • ${filteredEdges.length} edges`;
+        }
+
+        function changeLayout(layout) {
+            currentLayout = layout;
+            renderGraph();
+        }
+
+        function filterNodes() {
+            renderGraph();
+        }
+
+        function searchNodes() {
+            const query = document.getElementById('node-search').value.toLowerCase();
+            document.querySelectorAll('.graph-node').forEach(node => {
+                const id = node.getAttribute('data-id');
+                const nodeData = graphData.nodes.find(n => n.id === id);
+                const visible = !query || (nodeData.label && nodeData.label.toLowerCase().includes(query));
+                node.style.display = visible ? 'block' : 'none';
+            });
+        }
+
+        function zoomIn() { 
+            const cy = cytoscape.getElementById('xkg-graph');
+            if (cy) {
+                cy.zoom(cy.zoom() * 1.3);
+            } else {
+                zoomLevel = Math.min(zoomLevel * 1.3, 5); 
+                applyZoom(); 
+            }
+        }
+        function zoomOut() { 
+            const cy = cytoscape.getElementById('xkg-graph');
+            if (cy) {
+                cy.zoom(cy.zoom() / 1.3);
+            } else {
+                zoomLevel = Math.max(zoomLevel / 1.3, 0.2); 
+                applyZoom(); 
+            }
+        }
+        function zoomReset() {
+            const cy = cytoscape.getElementById('xkg-graph');
+            if (cy) {
+                cy.zoom(1);
+                cy.center();
+            } else {
+                zoomLevel = 1;
+                applyZoom();
+            }
+        }
+        function fitGraph() {
+            const cy = cytoscape.getElementById('xkg-graph');
+            if (cy) {
+                cy.fit();
+            } else {
+                fitGraphSVG();
+            }
+        }
+        function zoomReset() { zoomLevel = 1; applyZoom(); }
+        
+        function applyZoom() {
+            const svg = document.getElementById('graph-svg');
+            svg.style.transform = `scale(${zoomLevel})`;
+            svg.style.transformOrigin = 'center center';
+        }
+
+        // Mouse wheel zoom
+        document.addEventListener('wheel', function(e) {
+            if (currentView === 'graph') {
+                if (e.deltaY < 0) {
+                    zoomIn();
+                } else {
+                    zoomOut();
+                }
+                e.preventDefault();
+            }
+        }, { passive: false });
+
+        function fitGraphSVG() {
+            zoomReset();
+            renderGraph();
+        }
+
+        // ==================== DATA PERSISTENCE ====================
+
+        function saveGraphData() {
+            try {
+                localStorage.setItem('xkg_graph_data', JSON.stringify({
+                    nodes: graphData.nodes,
+                    edges: graphData.edges,
+                    timelineData: timelineData,
+                    actions: actions,
+                    topics: topics,
+                    conversations: conversations,
+                    timestamp: Date.now()
+                }));
+            } catch (e) {
+                console.warn('Failed to save graph data:', e);
+            }
+        }
+
+        function loadGraphData() {
+            // First try localStorage
+            try {
+                const saved = localStorage.getItem('xkg_graph_data');
+                if (saved) {
+                    const data = JSON.parse(saved);
+                    if (data.timestamp && (Date.now() - data.timestamp) < 24 * 60 * 60 * 1000) {
+                        graphData.nodes = data.nodes || [];
+                        graphData.edges = data.edges || [];
+                        timelineData = data.timelineData || [];
+                        actions = data.actions || [];
+                        topics = data.topics || {};
+                        conversations = data.conversations || [];
+                        return true;
+                    }
+                }
+            } catch (e) {
+                console.warn('Failed to load from localStorage:', e);
+            }
+            
+            // Fetch from API if localStorage is empty/expired
+            Promise.all([
+                fetch('/api/graph').then(r => r.json()),
+                fetch('/api/actions').then(r => r.json()).catch(() => [])
+            ])
+                .then(([graphDataResponse, actionsData]) => {
+                    if (graphDataResponse.nodes && graphDataResponse.nodes.length > 0) {
+                        graphData.nodes = graphDataResponse.nodes;
+                        graphData.edges = graphDataResponse.edges || [];
+                        console.log('Loaded', graphData.nodes.length, 'nodes from API');
+                    }
+                    // Also load actions from API
+                    if (actionsData && Array.isArray(actionsData) && actionsData.length > 0) {
+                        actions = actionsData;
+                        console.log('Loaded', actions.length, 'actions from API');
+                    }
+                })
+                .catch(e => console.warn('Failed to fetch graph:', e));
+            
+            return false;
+        }
+
+        // Render List view - X2 styles for Tweets/Likes, Chat bubbles for Conversations
+        function renderList() {
+            console.log('DEBUG: renderList called, currentDataType:', currentDataType);
+            console.log('DEBUG: loadedDataItems length:', loadedDataItems ? loadedDataItems.length : 'undefined');
+            
+            const container = document.getElementById('list-content');
+            if (!container) {
+                console.log('DEBUG: container not found!');
+                return;
+            }
+            
+            // Use loaded data from API first, fallback to graphData
+            let items = loadedDataItems;
+            
+            if (items.length === 0) {
+                try {
+                    const saved = localStorage.getItem('xkg_graph_data');
+                    if (saved) {
+                        const data = JSON.parse(saved);
+                        items = data.conversations || data.nodes || [];
+                    }
+                } catch (e) {}
+            }
+            
+            if (items.length === 0) {
+                items = graphData.nodes || [];
+            }
+            
+            if (items.length === 0) {
+                container.innerHTML = '<div class="empty-state">No data loaded. Use Data Type to select data.</div>';
+                document.getElementById('list-count').textContent = '0';
+                return;
+            }
+            
+            const type = currentDataType;
+            const displayItems = items.slice(0, 500);
+            console.log('renderList: type=' + type + ', items.length=' + items.length + ', displayItems.length=' + displayItems.length);
+            let html = '';
+            
+            if (type === 'tweets' || type === 'tweet') {
+                // X2 Style with expand button - Tweets only (no RT prefix, no @ reply)
+                html = '<div class="x2-container">';
+                items.forEach((item, i) => {
+                    const text = item.text || item.content || '';
+                    const time = item.created_at || '';
+                    
+                    // For tweets: show display name + handle
+                    let displayName = item.name || item.author?.name || '';
+                    let handle = item.handle || '@user';
+                    
+                    // Skip RT and @ replies
+                    if (!text || text.startsWith('RT @') || text.startsWith('@')) return;
+                    
+                    html += '<div class="x2-tweet" id="x2tweet-' + i + '">';
+                    html += '<div class="x2-header">';
+                    html += '<div class="x2-names">';
+                    if (displayName) {
+                        html += '<span class="x2-display-name">' + displayName + '</span> ';
+                    }
+                    html += '<span class="x2-handle">' + handle + '</span>';
+                    html += '</div></div>';
+                    html += '<div class="x2-text">' + text + '</div>';
+                    html += '<div class="x2-meta">' + time + '</div>';
+                    html += '<button class="x2-expand-btn" id="x2btn-' + i + '" onclick="toggleX2Tweet(' + i + ')">+</button></div>';
+                });
+                html += '</div>';
+                
+            } else if (type === 'reply') {
+                // Reply style - show @userid only (no display name)
+                html = '<div class="x2-container">';
+                items.forEach((item, i) => {
+                    const text = item.text || item.content || '';
+                    const time = item.created_at || '';
+                    
+                    // For replies: extract @userid from text
+                    let handle = '@user';
+                    const replyMatch = text.match(/^@(\w+)/);
+                    if (replyMatch) {
+                        handle = '@' + replyMatch[1];
+                    }
+                    
+                    // Only show replies
+                    if (!text || !text.startsWith('@')) return;
+                    
+                    // Get display name if available
+                    let displayName = item.name || item.author?.name || '';
+                    
+                    // Extract handle from text (e.g., "@user thanks" -> "user")
+                    handle = '';
+                    replyMatch = text.match(/^@(\w+)/);
+                    if (replyMatch) {
+                        handle = '@' + replyMatch[1];
+                    }
+                    
+                    html += '<div class="x2-tweet" id="x2reply-' + i + '">';
+                    html += '<div class="x2-header">';
+                    html += '<div class="x2-names">';
+                    if (displayName) {
+                        html += '<span class="x2-display-name">' + displayName + '</span> ';
+                    }
+                    if (handle) {
+                        html += '<span class="x2-handle">' + handle + '</span> ';
+                    }
+                    html += '<span class="x2-label reply">Reply</span>';
+                    html += '</div>';
+                    html += '</div>';
+                    html += '<div class="x2-text">' + text + '</div>';
+                    html += '<div class="x2-meta">' + time + '</div>';
+                    html += '<button class="x2-expand-btn" id="x2replybtn-' + i + '" onclick="toggleX2Reply(' + i + ')">+</button></div>';
+                });
+                html += '</div>';
+                
+            } else if (type === 'retweet') {
+                // X2 Style Retweet - show name and @userid
+                html = '<div class="x2-container">';
+                items.forEach((item, i) => {
+                    const text = item.text || item.content || '';
+                    const time = item.created_at || '';
+                    
+                    let author = 'User';
+                    let handle = '@user';
+                    
+                    // Parse from RT @username
+                    if (text.startsWith('RT @')) {
+                        const rtMatch = text.match(/^RT @(\w+):/);
+                        if (rtMatch) {
+                            author = rtMatch[1];
+                            handle = '@' + rtMatch[1];
+                        }
+                    }
+                    
+                    // Only show RT
+                    if (!text || !text.startsWith('RT @')) return;
+                    
+                    html += '<div class="x2-tweet" id="x2rt-' + i + '">';
+                    html += '<div class="x2-header">';
+                    html += '<div class="x2-names">';
+                    html += '<span style="color:#71767b;font-size:13px">Retweet</span> ';
+                    html += '<span class="x2-display-name">' + author + '</span> ';
+                    html += '<span class="x2-handle">' + handle + '</span>';
+                    html += '<span class="x2-label retweet">RT</span>';
+                    html += '</div>';
+                    html += '</div>';
+                    html += '<div class="x2-text">' + text + '</div>';
+                    html += '<div class="x2-meta">' + time + '</div>';
+                    html += '<button class="x2-expand-btn" id="x2rtbtn-' + i + '" onclick="toggleX2RT(' + i + ')">+</button></div>';
+                });
+                html += '</div>';
+                
+            } else if (type === 'likes') {
+                // X2 Style with heart icon
+                html = '<div class="x2-container">';
+                items.forEach((item, i) => {
+                    const text = item.text || item.content || '';
+                    const time = item.created_at || '';
+                    
+                    // Try to extract username from RT prefix or use fallback
+                    let author = item.author || item.user || 'User';
+                    let handle = item.handle || '@user';
+                    
+                    // Parse from RT @username
+                    if (text.startsWith('RT @')) {
+                        const rtMatch = text.match(/^RT @(\w+):/);
+                        if (rtMatch) {
+                            author = rtMatch[1];
+                            handle = '@' + rtMatch[1];
+                        }
+                    }
+                    
+                    if (!text) return;
+                    
+                    // Get display name if available
+                    let displayName = item.name || item.author?.name || '';
+                    
+                    html += '<div class="x2-tweet" id="x2like-' + i + '">';
+                    html += '<div class="x2-header">';
+                    html += '<div class="x2-names">';
+                    if (displayName) {
+                        html += '<span class="x2-display-name">' + displayName + '</span> ';
+                    }
+                    html += '<span class="x2-handle">' + handle + '</span>';
+                    html += '<span class="x2-label like">Liked</span>';
+                    html += '</div>';
+                    html += '</div>';
+                    html += '<div class="x2-text">' + text + '</div>';
+                    html += '<div class="x2-meta">' + time + '</div>';
+                    html += '<button class="x2-expand-btn" id="x2likebtn-' + i + '" onclick="toggleX2Like(' + i + ')">+</button></div>';
+                });
+                html += '</div>';
+                
+            } else if (type === 'bookmarks') {
+                // X2 Style with bookmark icon
+                html = '<div class="x2-container">';
+                items.forEach((item, i) => {
+                    const text = item.text || item.content || '';
+                    const time = item.created_at || '';
+                    
+                    // Try to extract username from RT prefix or use fallback
+                    let author = item.author || item.user || 'User';
+                    let handle = item.handle || '@user';
+                    
+                    // Parse from RT @username
+                    if (text.startsWith('RT @')) {
+                        const rtMatch = text.match(/^RT @(\w+):/);
+                        if (rtMatch) {
+                            author = rtMatch[1];
+                            handle = '@' + rtMatch[1];
+                        }
+                    }
+                    
+                    if (!text) return;
+                    
+                    // Get display name if available
+                    let displayName = item.name || item.author?.name || '';
+                    
+                    html += '<div class="x2-tweet" id="x2bookmark-' + i + '">';
+                    html += '<div class="x2-header">';
+                    html += '<div class="x2-names">';
+                    if (displayName) {
+                        html += '<span class="x2-display-name">' + displayName + '</span> ';
+                    }
+                    html += '<span class="x2-handle">' + handle + '</span>';
+                    html += '<span class="x2-label bookmark">Saved</span>';
+                    html += '</div>';
+                    html += '</div>';
+                    html += '<div class="x2-text">' + text + '</div>';
+                    html += '<div class="x2-meta">' + time + '</div>';
+                    html += '<button class="x2-expand-btn" id="x2bookmarkbtn-' + i + '" onclick="toggleX2Bookmark(' + i + ')">+</button></div>';
+                });
+                html += '</div>';
+                
+            } else if (type === 'conversations' || type === 'grok' || type === 'grokx') {
+                // Chat bubble style with double-click to expand (for conversations, grok, grokx)
+                html = '<div id=\"conversation-list-container\" style=\"padding: 12px; height: 100%; overflow-y: auto; background: #000;\">';
+                html += '<div style=\"color: #71767b; padding: 8px; border-bottom: 1px solid #333; margin-bottom: 12px;\"><strong>Showing ' + items.length + ' conversations</strong></div>';
+                items.forEach((item, i) => {
+                    const messages = item.messages || [];
+                    const title = item.title || 'Conversation';
+                    
+                    html += '<div class="collapsible-thread" id="convlist-' + i + '" data-conv-id="' + item.id + '">';
+                    html += '<div class="collapsible-header" onclick="this.parentElement.classList.toggle(\'expanded\')" style="display:flex; justify-content:space-between; align-items:center;">';
+                    html += '<span><strong>💬 ' + title + '</strong> <span style="color:var(--text-secondary);font-size:12px">(' + messages.length + ' msgs)</span></span></span>';
+                html += '<span style="margin-left:auto;display:flex;align-items:center;gap:8px;">';
+                html += renderTagsHtml(item.id);
+                html += '<a href="https://x.com/i/grok?conversation=' + item.id + '" target="_blank" style="color:#1d9bf0;text-decoration:none;" title="Open in Grok">🔗</a>';
+                html += renderAddTagButtons(item.id);
+                html += '<span onclick="event.stopPropagation();showConversationDetails(item)" style="cursor:pointer;margin-left:4px;" title="Details">ℹ️</span>';
+                html += '</span>';
+                    html += '<span class="toggle-icon" id="convicon-' + i + '">+</span></div>';
+                    html += '<div class="collapsible-body"><div class="chat-bubbles-list">';
+                    
+                    messages.forEach(function(m, j) {
+                        const isUser = m.sender === 'User' || m.sender === 'user';
+                        const senderName = m.sender || 'User';
+                        const senderDisplay = isUser ? '@The_IOTAnaut' : 'AI';
+                        html += '<div class="chat-bubble-list ' + (isUser ? 'user' : 'ai') + '" id="msg-' + i + '-' + j + '" ondblclick="toggleMsgBubble(' + i + ',' + j + ')">';
+                        html += '<div class="sender-row"><span class="sender">' + senderDisplay + '</span><button class="chat-bubble-expand" id="btnmsg-' + i + '-' + j + '" onclick="event.stopPropagation();toggleMsgBubble(' + i + ',' + j + ')">+</button></div>';
+                        html += '<div class="msg-text">' + (m.content?.text || m.text || '') + '</div></div>';
+                    });
+                    
+                    html += '</div></div></div>';
+                });
+                html += '</div>';
+            } else {
+                // Default fallback
+                html = '<div style="padding:12px">';
+                displayItems.forEach(item => {
+                    const text = item.text || item.title || JSON.stringify(item).substring(0, 100);
+                    html += '<div style="padding:10px;border-bottom:1px solid var(--border-color)">' + text + '</div>';
+                });
+                html += '</div>';
+            }
+            
+            container.innerHTML = html;
+            document.getElementById('list-count').textContent = items.length;
+        }
+        
+        // Sort function for list view
+        function sortList() {
+            const sortBy = document.getElementById('list-sort')?.value || 'date-desc';
+            
+            if (!loadedDataItems || loadedDataItems.length === 0) return;
+            
+            loadedDataItems.sort((a, b) => {
+                // For conversations, sort by created_at
+                if (currentDataType === 'grok' || currentDataType === 'grokx' || currentDataType === 'conversations') {
+                    const dateA = a.created_at || a.messages?.[0]?.created_at || '';
+                    const dateB = b.created_at || b.messages?.[0]?.created_at || '';
+                    
+                    if (sortBy === 'date-desc') {
+                        return dateB.localeCompare(dateA);
+                    } else if (sortBy === 'date-asc') {
+                        return dateA.localeCompare(dateB);
+                    }
+                }
+                // For tweets/likes, sort by created_at
+                const dateA = a.created_at || '';
+                const dateB = b.created_at || '';
+                
+                if (sortBy === 'date-desc') {
+                    return dateB.localeCompare(dateA);
+                } else if (sortBy === 'date-asc') {
+                    return dateA.localeCompare(dateB);
+                }
+                return 0;
+            });
+            
+            renderList();
+        }
+
+        // Toggle functions for List view
+        function toggleX2Tweet(id) {
+            var el = document.getElementById('x2tweet-' + id);
+            var btn = document.getElementById('x2btn-' + id);
+            el.style.maxHeight = el.style.maxHeight === '150px' ? '1500px' : '150px';
+            btn.textContent = el.style.maxHeight === '150px' ? '-' : '+';
+        }
+        
+        function toggleX2Reply(id) {
+            var el = document.getElementById('x2reply-' + id);
+            var btn = document.getElementById('x2replybtn-' + id);
+            el.style.maxHeight = el.style.maxHeight === '150px' ? '1500px' : '150px';
+            btn.textContent = el.style.maxHeight === '150px' ? '-' : '+';
+        }
+        
+        function toggleX2RT(id) {
+            var el = document.getElementById('x2rt-' + id);
+            var btn = document.getElementById('x2rtbtn-' + id);
+            el.style.maxHeight = el.style.maxHeight === '150px' ? '1500px' : '150px';
+            btn.textContent = el.style.maxHeight === '150px' ? '-' : '+';
+        }
+        
+        function toggleX2Like(id) {
+            var el = document.getElementById('x2like-' + id);
+            var btn = document.getElementById('x2likebtn-' + id);
+            el.style.maxHeight = el.style.maxHeight === '150px' ? '1500px' : '150px';
+            btn.textContent = el.style.maxHeight === '150px' ? '-' : '+';
+        }
+        
+        function toggleX2Bookmark(id) {
+            var el = document.getElementById('x2bookmark-' + id);
+            var btn = document.getElementById('x2bookmarkbtn-' + id);
+            el.style.maxHeight = el.style.maxHeight === '150px' ? '1500px' : '150px';
+            btn.textContent = el.style.maxHeight === '150px' ? '-' : '+';
+        }
+        
+        function toggleMsgBubble(convId, msgId) {
+            var el = document.getElementById('msg-' + convId + '-' + msgId);
+            var btn = document.getElementById('btnmsg-' + convId + '-' + msgId);
+            el.classList.toggle('expanded');
+            btn.textContent = el.classList.contains('expanded') ? '-' : '+';
+        }
+
+        function clearPersistedData() {
+            localStorage.removeItem('xkg_graph_data');
+        }
+
+        function showTooltip(node, x, y) {
+            const tooltip = document.getElementById('node-tooltip');
+            tooltip.querySelector('.node-tooltip-title').textContent = 
+                node.type.charAt(0).toUpperCase() + node.type.slice(1);
+            tooltip.querySelector('.node-tooltip-text').textContent = 
+                node.label || node.text || 'Node ' + node.id;
+            tooltip.style.left = (x + 10) + 'px';
+            tooltip.style.top = (y - 30) + 'px';
+            tooltip.style.display = 'block';
+        }
+
+        function hideTooltip() {
+            document.getElementById('node-tooltip').style.display = 'none';
+        }
+
+        function selectNode(node) {
+            showNodeDetails(node);
+        }
+
+        // ==================== TIMELINE VIEW ====================
+
+        function renderTimeline() {
+            const container = document.getElementById('timeline-stream');
+            
+            if (!timelineData || timelineData.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="icon">📅</div>
+                        <h3>No Timeline Data</h3>
+                        <p>Load an X export to see your chronological activity stream</p>
+                    </div>
+                `;
+                return;
+            }
+
+            let filtered = [...timelineData];
+            
+            const startDate = document.getElementById('timeline-start').value;
+            const endDate = document.getElementById('timeline-end').value;
+            
+            if (startDate) {
+                filtered = filtered.filter(item => item.date >= startDate);
+            }
+            if (endDate) {
+                filtered = filtered.filter(item => item.date <= endDate);
+            }
+
+            filtered.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+            container.innerHTML = filtered.map(item => `
+                <div class="timeline-item type-${item.type}" onclick="selectTimelineItem('${item.id}')">
+                    <div class="timeline-header">
+                        <span class="timeline-time">${formatDate(item.date)}</span>
+                        <span class="timeline-type">${item.type}</span>
+                    </div>
+                    <div class="timeline-content">${item.content}</div>
+                    ${item.meta ? `<div class="timeline-meta">${item.meta}</div>` : ''}
+                </div>
+            `).join('');
+
+            document.getElementById('timeline-visible').textContent = filtered.length;
+            document.getElementById('timeline-total').textContent = timelineData.length;
+
+            renderHeatmap();
+        }
+
+        function filterTimeline() {
+            renderTimeline();
+        }
+
+        function clearTimelineFilter() {
+            document.getElementById('timeline-start').value = '';
+            document.getElementById('timeline-end').value = '';
+            renderTimeline();
+        }
+
+        function renderHeatmap() {
+            const container = document.getElementById('heatmap');
+            const days = 30;
+            let html = '';
+            
+            for (let i = 0; i < days; i++) {
+                const level = Math.floor(Math.random() * 5);
+                html += `<div class="heatmap-day level-${level}"></div>`;
+            }
+            
+            container.innerHTML = html;
+        }
+
+        function formatDate(dateStr) {
+            const date = new Date(dateStr);
+            return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+        }
+
+        function selectTimelineItem(itemId) {
+            const item = timelineData.find(i => i.id === itemId);
+            if (item) showNodeDetails(item);
+        }
+
+        // ==================== TASK BOARD VIEW ====================
+
+        function renderTaskBoard() {
+            const todoContainer = document.getElementById('tasks-todo');
+            const progressContainer = document.getElementById('tasks-inprogress');
+            const doneContainer = document.getElementById('tasks-done');
+
+            const taskFilter = document.getElementById('task-filter').value;
+            let filteredActions = actions;
+
+            // Filter by current data type (Grok, GrokX, Tweets, or All)
+            if (currentDataType === 'grok') {
+                filteredActions = filteredActions.filter(a => a.source_type === 'grok');
+            } else if (currentDataType === 'grokx') {
+                filteredActions = filteredActions.filter(a => a.source_type === 'grokx');
+            } else if (currentDataType === 'tweets') {
+                filteredActions = filteredActions.filter(a => a.source_type === 'tweet');
+            }
+            // 'all' shows everything
+
+            if (taskFilter !== 'all') {
+                filteredActions = actions.filter(a => {
+                    if (taskFilter === 'pending') return a.status !== 'complete';
+                    if (taskFilter === 'in_progress') return a.status === 'in_progress';
+                    if (taskFilter === 'complete') return a.status === 'complete';
+                    return true;
+                });
+            }
+
+            const todo = filteredActions.filter(a => a.status !== 'complete');
+            const inProgress = filteredActions.filter(a => a.status === 'in_progress');
+            const done = filteredActions.filter(a => a.status === 'complete');
+
+            todoContainer.innerHTML = todo.map(a => createTaskCard(a)).join('');
+            progressContainer.innerHTML = inProgress.map(a => createTaskCard(a)).join('');
+            doneContainer.innerHTML = done.map(a => createTaskCard(a)).join('');
+
+            document.getElementById('count-todo').textContent = todo.length;
+            document.getElementById('count-inprogress').textContent = inProgress.length;
+            document.getElementById('count-done').textContent = done.length;
+            document.getElementById('task-count').textContent = filteredActions.length;
+
+            setupDragAndDrop();
+        }
+
+        function createTaskCard(action) {
+            const initial = (action.assignee || 'U')[0].toUpperCase();
+            return `
+                <div class="task-card priority-${action.priority}" 
+                     draggable="true" 
+                     data-action-id="${action.id}"
+                     onclick="selectTask('${action.id}')">
+                    <div class="task-title">${action.text}</div>
+                    <div class="task-meta">
+                        <span class="task-priority-badge">${action.priority}</span>
+                        <div class="task-assignee">
+                            <div class="task-assignee-avatar">${initial}</div>
+                            ${action.assignee || 'Unassigned'}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function setupDragAndDrop() {
+            document.querySelectorAll('.task-card').forEach(card => {
+                card.addEventListener('dragstart', handleDragStart);
+                card.addEventListener('dragend', handleDragEnd);
+            });
+        }
+
+        function handleDragStart(e) {
+            e.target.classList.add('dragging');
+            e.dataTransfer.setData('text/plain', e.target.dataset.actionId);
+        }
+
+        function handleDragEnd(e) {
+            e.target.classList.remove('dragging');
+        }
+
+        function handleDragOver(e) {
+            e.preventDefault();
+            e.currentTarget.classList.add('drag-over');
+        }
+
+        function handleDragLeave(e) {
+            e.currentTarget.classList.remove('drag-over');
+        }
+
+        async function handleDrop(e, status) {
+            e.preventDefault();
+            e.currentTarget.classList.remove('drag-over');
+            
+            const actionId = e.dataTransfer.getData('text/plain');
+            
+            const action = actions.find(a => a.id === actionId);
+            if (action) {
+                action.status = status === 'todo' ? 'pending' : status;
+                await updateActionStatus(actionId, action.status);
+                renderTaskBoard();
+            }
+        }
+
+        function filterTasks() {
+            renderTaskBoard();
+        }
+
+        async function updateActionStatus(actionId, status) {
+            try {
+                await fetch(`${API_BASE}/api/actions/${actionId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ status })
+                });
+            } catch (error) {
+                console.error('Error updating action:', error);
+            }
+        }
+
+        function selectTask(actionId) {
+            const action = actions.find(a => a.id === actionId);
+            if (action) showNodeDetails(action);
+        }
+
+        // ==================== TOPIC CLUSTERS VIEW ====================
+
+        function renderClusters() {
+            const container = document.getElementById('clusters-grid');
+            
+            // Filter topics based on current data type
+            let filteredTopics = topics;
+            
+            // Filter topics by source type
+            if (currentDataType === 'grok' || currentDataType === 'grokx' || currentDataType === 'tweets') {
+                const sourceFilter = currentDataType === 'tweets' ? 'tweet' : currentDataType;
+                const filtered = {};
+                for (const [name, topic] of Object.entries(topics)) {
+                    const filteredItems = (topic.items || []).filter(item => item.source_type === sourceFilter);
+                    if (filteredItems.length > 0) {
+                        filtered[name] = {
+                            ...topic,
+                            items: filteredItems,
+                            action_count: filteredItems.length
+                        };
+                    }
+                }
+                filteredTopics = filtered;
+            }
+            
+            const topicEntries = Object.entries(filteredTopics);
+
+            if (topicEntries.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="icon">🏷️</div>
+                        <h3>No Topic Clusters</h3>
+                        <p>Load an X export to see your topics organized by keywords</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = topicEntries.map(([name, topic]) => `
+                <div class="cluster-card" data-cluster="${name}">
+                    <div class="cluster-header" onclick="toggleCluster('${name}')">
+                        <div class="cluster-name">
+                            <span class="cluster-expand-icon">▶</span>
+                            <span class="pinned-star" style="cursor: pointer; margin-right: 4px; opacity: 0.4;" onclick="event.stopPropagation(); this.style.opacity = this.style.opacity === '0.4' ? '1' : '0.4'; this.innerText = this.style.opacity === '1' ? '⭐' : '☆';" title="Pin topic">☆</span>
+                            ${name}
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <button style="background: none; border: none; cursor: pointer; font-size: 14px; opacity: 0.6;" onclick="event.stopPropagation(); showTopicModal('${name}')" title="View details">
+                                👁️
+                            </button>
+                            <span class="cluster-count">${topic.action_count || 0}</span>
+                        </div>
+                    </div>
+                    <div class="cluster-items hidden" id="cluster-items-${name.replace(/\s/g, '-')}">
+                        ${(topic.items || []).map(item => `
+                            <div class="cluster-item" onclick="selectClusterItem('${item.id}')">
+                                <div class="cluster-item-title">${item.title}</div>
+                                <div class="cluster-item-meta">${item.date || ''}</div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `).join('');
+
+            document.getElementById('cluster-count').textContent = topicEntries.length;
+        }
+
+        function toggleCluster(name) {
+            const card = document.querySelector(`[data-cluster="${name}"]`);
+            const items = document.getElementById(`cluster-items-${name.replace(/\s/g, '-')}`);
+            card.classList.toggle('expanded');
+            items.classList.toggle('hidden');
+        }
+
+        function expandAllClusters() {
+            document.querySelectorAll('.cluster-card').forEach(card => {
+                card.classList.add('expanded');
+                const items = card.querySelector('.cluster-items');
+                items.classList.remove('hidden');
+            });
+        }
+
+        function collapseAllClusters() {
+            document.querySelectorAll('.cluster-card').forEach(card => {
+                card.classList.remove('expanded');
+                const items = card.querySelector('.cluster-items');
+                items.classList.add('hidden');
+            });
+        }
+
+        function searchClusters() {
+            const query = document.getElementById('cluster-search').value.toLowerCase();
+            const items = document.querySelectorAll('.cluster-card');
+            items.forEach(card => {
+                const name = card.querySelector('.cluster-name').textContent.toLowerCase();
+                card.style.display = name.includes(query) ? '' : 'none';
+            });
+        }
+        
+        function searchConversations() {
+            const query = document.getElementById('conversation-search').value.toLowerCase();
+            if (!query) return;
+            
+            // Find matching conversation and scroll to it
+            const items = document.querySelectorAll('.collapsible-thread');
+            items.forEach((item, idx) => {
+                const title = item.querySelector('strong').textContent.toLowerCase();
+                if (title.includes(query)) {
+                    item.style.display = '';
+                    item.classList.add('expanded');
+                    item.scrollIntoView({behavior: 'smooth', block: 'center'});
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+        }
+        
+        function searchOld() {
+            const query = document.getElementById('cluster-search').value.toLowerCase();
+            document.querySelectorAll('.cluster-card').forEach(card => {
+                const name = card.dataset.cluster.toLowerCase();
+                card.style.display = name.includes(query) ? 'block' : 'none';
+            });
+        }
+
+        function selectClusterItem(itemId) {
+            for (const topic of Object.values(topics)) {
+                const item = (topic.items || []).find(i => i.id === itemId);
+                if (item) {
+                    showNodeDetails(item);
+                    return;
+                }
+            }
+        }
+
+        // ==================== CONVERSATION TREE VIEW ====================
+
+        function renderConversation() {
+            const container = document.getElementById('conversation-tree');
+
+            if (!conversations || conversations.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="icon">💬</div>
+                        <h3>No Conversations</h3>
+                        <p>Load an X export to see your reply threads organized</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = conversations.map(conv => createConversationTree(conv)).join('');
+            document.getElementById('conversation-count').textContent = conversations.length;
+        }
+
+        function createConversationTree(conv, depth = 0) {
+            const initial = (conv.author || 'U')[0].toUpperCase();
+            const hasChildren = conv.replies && conv.replies.length > 0;
+            
+            return `
+                <div class="conversation-thread" onclick="toggleThread(this)">
+                    <div class="thread-header">
+                        <div class="thread-avatar">${initial}</div>
+                        <div class="thread-content">
+                            <div class="thread-author">${conv.author}</div>
+                            <div class="thread-text">${conv.text}</div>
+                            <div class="thread-time">${formatDate(conv.date)}</div>
+                            ${hasChildren ? `<button class="expand-btn">Show ${conv.replies.length} replies</button>` : ''}
+                        </div>
+                    </div>
+                    ${hasChildren ? `
+                        <div class="thread-children collapsed">
+                            ${conv.replies.map(reply => createReplyItem(reply)).join('')}
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+        }
+
+        function createReplyItem(reply) {
+            const initial = (reply.author || 'U')[0].toUpperCase();
+            return `
+                <div class="reply-item" onclick="selectReply('${reply.id}')">
+                    <div class="reply-header">
+                        <div class="reply-avatar">${initial}</div>
+                        <span class="reply-author">${reply.author}</span>
+                        <span class="reply-time">${formatDate(reply.date)}</span>
+                    </div>
+                    <div class="reply-text">${reply.text}</div>
+                </div>
+            `;
+        }
+
+        function toggleThread(element) {
+            const children = element.querySelector('.thread-children');
+            if (children) {
+                children.classList.toggle('collapsed');
+                const btn = element.querySelector('.expand-btn');
+                if (btn) {
+                    btn.textContent = children.classList.contains('collapsed') 
+                        ? `Show ${children.children.length} replies` 
+                        : 'Hide replies';
+                }
+            }
+        }
+
+        function expandAllThreads() {
+            document.querySelectorAll('.thread-children').forEach(el => el.classList.remove('collapsed'));
+        }
+
+        function collapseAllThreads() {
+            document.querySelectorAll('.thread-children').forEach(el => el.classList.add('collapsed'));
+        }
+
+        function searchConversations() {
+            const query = document.getElementById('conversation-search').value.toLowerCase();
+            document.querySelectorAll('.conversation-thread').forEach(thread => {
+                const text = thread.textContent.toLowerCase();
+                thread.style.display = text.includes(query) ? 'block' : 'none';
+            });
+        }
+
+        function selectReply(replyId) {
+            for (const conv of conversations) {
+                const reply = (conv.replies || []).find(r => r.id === replyId);
+                if (reply) {
+                    showNodeDetails(reply);
+                    return;
+                }
+            }
+        }
+
+        // ==================== DETAILS PANEL ====================
+
+        function showNodeDetails(node) {
+            const typeColors = { tweet: '#3498db', action: '#e94560', topic: '#00d9ff', user: '#9b59b6' };
+            
+            els.details.innerHTML = `
+                <div class="detail-card">
+                    <div class="detail-row">
+                        <div class="detail-label">Type</div>
+                        <div class="detail-value" style="color: ${typeColors[node.type] || '#ccc'}">
+                            ● ${node.type || 'Unknown'}
+                        </div>
+                    </div>
+                    ${node.label ? `
+                        <div class="detail-row">
+                            <div class="detail-label">Label</div>
+                            <div class="detail-value">${node.label}</div>
+                        </div>
+                    ` : ''}
+                    ${node.text ? `
+                        <div class="detail-row">
+                            <div class="detail-label">Content</div>
+                            <div class="detail-value">${node.text.substring(0, 200)}${node.text.length > 200 ? '...' : ''}</div>
+                        </div>
+                    ` : ''}
+                    ${node.topic ? `
+                        <div class="detail-row">
+                            <div class="detail-label">Topic</div>
+                            <div class="detail-value">${node.topic}</div>
+                        </div>
+                    ` : ''}
+                    ${node.priority ? `
+                        <div class="detail-row">
+                            <div class="detail-label">Priority</div>
+                            <div class="detail-value">
+                                <span class="task-priority-badge priority-${node.priority}">${node.priority}</span>
+                            </div>
+                        </div>
+                    ` : ''}
+                    ${node.status ? `
+                        <div class="detail-row">
+                            <div class="detail-label">Status</div>
+                            <div class="detail-value">
+                                <span class="status-badge ${node.status === 'complete' ? 'complete' : 'pending'}">
+                                    ${node.status}
+                                </span>
+                            </div>
+                        </div>
+                    ` : ''}
+                    ${node.date ? `
+                        <div class="detail-row">
+                            <div class="detail-label">Date</div>
+                            <div class="detail-value">${formatDate(node.date)}</div>
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+        }
+
+        // ==================== API FUNCTIONS ====================
+
+        function toggleFolderInputs() {
+            const exportType = document.querySelector('input[name="export-type"]:checked').value;
+            const xSection = document.getElementById('x-folder-section');
+            const grokSection = document.getElementById('grok-folder-section');
+            
+            xSection.style.display = exportType === 'grok' ? 'none' : 'block';
+            grokSection.style.display = exportType === 'x' ? 'none' : 'block';
+        }
+
+        async function selectFolder(type) {
+            try {
+                await fetch('/api/select-folder', { method: 'POST' });
+                
+                let attempts = 0;
+                while (attempts < 100) {
+                    await new Promise(r => setTimeout(r, 100));
+                    const response = await fetch('/api/get-selected-folder');
+                    const result = await response.json();
+                    
+                    if (result.status === 'done') {
+                        if (result.path) {
+                            const key = type === 'grok' ? 'xkg_grok_path' : 'xkg_export_path';
+                            const inputId = type === 'grok' ? 'grok-folder-path' : 'x-folder-path';
+                            localStorage.setItem(key, result.path);
+                            document.getElementById(inputId).value = result.path;
+                        }
+                        return;
+                    }
+                    attempts++;
+                }
+            } catch (error) {
+                document.getElementById(type === 'grok' ? 'grok-folder-input' : 'folder-input').click();
+            }
+        }
+
+        document.getElementById('folder-input').addEventListener('change', (e) => {
+            if (e.target.files[0]) {
+                const path = e.target.files[0].path.replace(/\\[^\\]+$/, '');
+                localStorage.setItem('xkg_export_path', path);
+                document.getElementById('x-folder-path').value = path;
+            }
+        });
+
+        document.getElementById('grok-folder-input').addEventListener('change', (e) => {
+            if (e.target.files[0]) {
+                const path = e.target.files[0].path.replace(/\\[^\\]+$/, '');
+                localStorage.setItem('xkg_grok_path', path);
+                document.getElementById('grok-folder-path').value = path;
+            }
+        });
+
+        async function parseExport() {
+            const exportType = document.querySelector('input[name="export-type"]:checked').value;
+            const xPath = document.getElementById('x-folder-path').value || localStorage.getItem('xkg_export_path');
+            const grokPath = document.getElementById('grok-folder-path').value || localStorage.getItem('xkg_grok_path');
+
+            if (exportType === 'x' && !xPath) {
+                alert('Please select an X export folder first');
+                return;
+            }
+            if (exportType === 'grok' && !grokPath) {
+                alert('Please select a Grok export folder first');
+                return;
+            }
+            if (exportType === 'both' && (!xPath || !grokPath)) {
+                alert('Please select both X and Grok export folders');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/api/parse-export`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        x_path: xPath,
+                        grok_path: grokPath,
+                        export_type: exportType
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+
+                document.getElementById('stat-tweets').textContent = data.stats.total_tweets;
+                document.getElementById('stat-actions').textContent = data.stats.total_actions;
+                document.getElementById('stat-topics').textContent = data.stats.topics_count;
+                document.getElementById('stat-conversations').textContent = data.stats.total_conversations;
+                els.statsSection.style.display = 'block';
+
+                actions = data.actions || [];
+                topics = data.topics || {};
+                graphData = data.graph || { nodes: [], edges: [] };
+                
+                timelineData = [];
+                if (graphData.nodes) {
+                    graphData.nodes.forEach(node => {
+                        if (node.date) {
+                            timelineData.push({
+                                id: node.id,
+                                type: node.type,
+                                date: node.date,
+                                content: node.label || node.text || '',
+                                meta: node.topic || ''
+                            });
+                        }
+                    });
+                }
+
+                conversations = [];
+
+                // Save to localStorage for persistence
+                saveGraphData();
+
+                renderCurrentView();
+
+            } catch (error) {
+                alert('Error parsing export: ' + error.message);
+            }
+        }
+
+        function exportData() {
+            window.location.href = `${API_BASE}/api/export`;
+        }
+
+        function clearGraph() {
+            graphData = { nodes: [], edges: [] };
+            timelineData = [];
+            actions = [];
+            topics = {};
+            conversations = [];
+            clearPersistedData();
+            document.getElementById('x-folder-path').value = '';
+            document.getElementById('grok-folder-path').value = '';
+            localStorage.removeItem('xkg_export_path');
+            localStorage.removeItem('xkg_grok_path');
+        }
+        
+        // Toggle data type visibility (tweets/likes)
+        function toggleDataType(type) {
+            const enabled = document.getElementById('toggle-' + type)?.checked || false;
+            console.log('Toggle ' + type + ': ' + enabled);
+            
+            // Reload current view with new settings
+            if (typeof loadDataType === 'function' && currentDataType) {
+                loadDataType(currentDataType);
+            }
+            
+            // Save preference
+            localStorage.setItem('xkg_show_' + type, enabled ? 'true' : 'false');
+        }
+        
+        // Load saved preferences
+        function loadPreferences() {
+            const showTweets = localStorage.getItem('xkg_show_tweets');
+            const showLikes = localStorage.getItem('xkg_show_likes');
+            
+            if (showTweets !== null) {
+                document.getElementById('toggle-tweets').checked = showTweets === 'true';
+            }
+            if (showLikes !== null) {
+                document.getElementById('toggle-likes').checked = showLikes === 'true';
+            }
+        }
+            els.statsSection.style.display = 'none';
+            renderCurrentView();
+        }
+
+        function showHelp() {
+            document.getElementById('help-modal').style.display = 'block';
+        }
+
+        function hideHelp() {
+            document.getElementById('help-modal').style.display = 'none';
+        }
+
+        // ==================== SETTINGS ====================
+        
+        function showSettings() {
+            const panel = document.getElementById('settings-panel');
+            panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+        }
+        
+        function toggleDataSource() {
+            const section = document.getElementById('data-source-section');
+            const content = document.getElementById('data-source-content');
+            if (content.style.display === 'none') {
+                content.style.display = 'block';
+                section.querySelector('button').textContent = '−';
+            } else {
+                content.style.display = 'none';
+                section.querySelector('button').textContent = '+';
+            }
+        }
+
+        // ==================== EXPORT FUNCTIONS ====================
+
+        function toggleExportMenu() {
+            const menu = document.getElementById('export-menu');
+            menu.classList.toggle('show');
+        }
+
+        // Close export menu when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.export-dropdown')) {
+                document.getElementById('export-menu').classList.remove('show');
+            }
+        });
+
+        function exportJSON() {
+            const exportData = {
+                graph: graphData,
+                actions: actions,
+                topics: topics,
+                conversations: conversations,
+                exportedAt: new Date().toISOString()
+            };
+
+            const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `x-knowledge-graph-${new Date().toISOString().split('T')[0]}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+
+            document.getElementById('export-menu').classList.remove('show');
+        }
+
+        async function exportPDF() {
+            if (!graphData.nodes || graphData.nodes.length === 0) {
+                alert('No data to export. Please load an X export first.');
+                document.getElementById('export-menu').classList.remove('show');
+                return;
+            }
+
+            document.getElementById('export-menu').classList.remove('show');
+
+            // Generate preview content
+            const preview = generateExportPreview();
+
+            document.getElementById('export-preview').innerHTML = preview;
+            document.getElementById('export-modal').style.display = 'block';
+        }
+
+        function generateExportPreview() {
+            const stats = {
+                tweets: graphData.nodes.filter(n => n.type === 'tweet').length,
+                actions: actions.length,
+                topics: Object.keys(topics).length,
+                conversations: conversations.length
+            };
+
+            const recentActions = actions.slice(0, 10);
+
+            let html = `
+                <h1>X Knowledge Graph Export</h1>
+                <p style="color: var(--text-secondary); font-size: 12px; margin-bottom: 20px;">
+                    Generated: ${new Date().toLocaleString()}
+                </p>
+
+                <div class="export-stats">
+                    <div class="stat-box">
+                        <div class="stat-value">${stats.tweets}</div>
+                        <div class="stat-label">Tweets</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-value">${stats.actions}</div>
+                        <div class="stat-label">Actions</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-value">${stats.topics}</div>
+                        <div class="stat-label">Topics</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-value">${stats.conversations}</div>
+                        <div class="stat-label">Conversations</div>
+                    </div>
+                </div>
+
+                <h2>Topics</h2>
+                <div class="export-section">
+            `;
+
+            if (Object.keys(topics).length === 0) {
+                html += '<p style="color: var(--text-secondary);">No topics found.</p>';
+            } else {
+                Object.entries(topics).forEach(([name, topic]) => {
+                    html += `
+                        <div class="export-item">
+                            <div class="item-title">${name}</div>
+                            <div class="item-meta">${topic.action_count || 0} items</div>
+                        </div>
+                    `;
+                });
+            }
+
+            html += '</div><h2>Recent Actions</h2><div class="export-section">';
+
+            if (recentActions.length === 0) {
+                html += '<p style="color: var(--text-secondary);">No actions found.</p>';
+            } else {
+                recentActions.forEach(action => {
+                    html += `
+                        <div class="export-item">
+                            <div class="item-title">${action.text}</div>
+                            <div class="item-meta">Priority: ${action.priority || 'N/A'} | Status: ${action.status || 'pending'}</div>
+                        </div>
+                    `;
+                });
+            }
+
+            html += '</div>';
+
+            if (graphData.nodes && graphData.nodes.length > 0) {
+                html += '<h2>Graph Nodes</h2><div class="export-section">';
+                const sampleNodes = graphData.nodes.slice(0, 20);
+                sampleNodes.forEach(node => {
+                    html += `
+                        <div class="export-item">
+                            <div class="item-title">${node.label || node.id}</div>
+                            <div class="item-meta">Type: ${node.type}</div>
+                        </div>
+                    `;
+                });
+                if (graphData.nodes.length > 20) {
+                    html += `<div class="export-item"><div class="item-title">... and ${graphData.nodes.length - 20} more nodes</div></div>`;
+                }
+                html += '</div>';
+            }
+
+            return html;
+        }
+
+        function closeExportModal() {
+            document.getElementById('export-modal').style.display = 'none';
+        }
+
+        async function downloadPDF() {
+            const { jsPDF } = window.jspdf;
+            const preview = document.getElementById('export-preview');
+
+            try {
+                // Create PDF
+                const pdf = new jsPDF('p', 'mm', 'a4');
+                const pageWidth = pdf.internal.pageSize.getWidth();
+                const pageHeight = pdf.internal.pageSize.getHeight();
+                const margin = 15;
+                let yPos = margin;
+
+                // Title
+                pdf.setFontSize(20);
+                pdf.setTextColor(0, 217, 255);
+                pdf.text('X Knowledge Graph Export', pageWidth / 2, yPos, { align: 'center' });
+                yPos += 10;
+
+                // Date
+                pdf.setFontSize(10);
+                pdf.setTextColor(100, 100, 100);
+                pdf.text(`Generated: ${new Date().toLocaleString()}`, pageWidth / 2, yPos, { align: 'center' });
+                yPos += 15;
+
+                // Stats box
+                const stats = {
+                    tweets: graphData.nodes.filter(n => n.type === 'tweet').length,
+                    actions: actions.length,
+                    topics: Object.keys(topics).length,
+                    conversations: conversations.length
+                };
+
+                pdf.setFillColor(240, 240, 250);
+                pdf.roundedRect(margin, yPos, pageWidth - margin * 2, 25, 3, 3, 'F');
+
+                const statWidth = (pageWidth - margin * 2) / 4;
+                const statsData = [
+                    { label: 'Tweets', value: stats.tweets },
+                    { label: 'Actions', value: stats.actions },
+                    { label: 'Topics', value: stats.topics },
+                    { label: 'Conversations', value: stats.conversations }
+                ];
+
+                pdf.setFontSize(14);
+                statsData.forEach((stat, i) => {
+                    const x = margin + (i * statWidth) + statWidth / 2;
+                    pdf.setTextColor(0, 0, 0);
+                    pdf.text(String(stat.value), x, yPos + 8, { align: 'center' });
+                    pdf.setFontSize(8);
+                    pdf.setTextColor(100, 100, 100);
+                    pdf.text(stat.label, x, yPos + 16, { align: 'center' });
+                    pdf.setFontSize(14);
+                });
+
+                yPos += 35;
+
+                // Topics section
+                pdf.setFontSize(14);
+                pdf.setTextColor(0, 0, 0);
+                pdf.text('Topics', margin, yPos);
+                yPos += 8;
+
+                pdf.setFontSize(10);
+                if (Object.keys(topics).length === 0) {
+                    pdf.setTextColor(100, 100, 100);
+                    pdf.text('No topics found.', margin, yPos);
+                    yPos += 8;
+                } else {
+                    Object.entries(topics).forEach(([name, topic]) => {
+                        if (yPos > pageHeight - 20) {
+                            pdf.addPage();
+                            yPos = margin;
+                        }
+                        pdf.setTextColor(0, 0, 0);
+                        pdf.text(`• ${name}`, margin, yPos);
+                        pdf.setTextColor(100, 100, 100);
+                        pdf.text(`(${topic.action_count || 0} items)`, margin + 80, yPos);
+                        yPos += 6;
+                    });
+                }
+
+                yPos += 10;
+
+                // Actions section
+                if (yPos > pageHeight - 40) {
+                    pdf.addPage();
+                    yPos = margin;
+                }
+
+                pdf.setFontSize(14);
+                pdf.setTextColor(0, 0, 0);
+                pdf.text('Recent Actions', margin, yPos);
+                yPos += 8;
+
+                const recentActions = actions.slice(0, 15);
+                pdf.setFontSize(10);
+                if (recentActions.length === 0) {
+                    pdf.setTextColor(100, 100, 100);
+                    pdf.text('No actions found.', margin, yPos);
+                } else {
+                    recentActions.forEach(action => {
+                        if (yPos > pageHeight - 15) {
+                            pdf.addPage();
+                            yPos = margin;
+                        }
+                        const status = action.status === 'complete' ? '✓' : '○';
+                        pdf.setTextColor(0, 0, 0);
+                        const text = `${status} ${action.text}`;
+                        const lines = pdf.splitTextToSize(text, pageWidth - margin * 2 - 40);
+                        pdf.text(lines, margin, yPos);
+                        yPos += lines.length * 5 + 3;
+
+                        pdf.setTextColor(100, 100, 100);
+                        pdf.setFontSize(8);
+                        pdf.text(`Priority: ${action.priority || 'N/A'}`, margin + 5, yPos);
+                        yPos += 4;
+                        pdf.setFontSize(10);
+                    });
+                }
+
+                // Footer on last page
+                const pageCount = pdf.internal.getNumberOfPages();
+                for (let i = 1; i <= pageCount; i++) {
+                    pdf.setPage(i);
+                    pdf.setFontSize(8);
+                    pdf.setTextColor(150, 150, 150);
+                    pdf.text(`Page ${i} of ${pageCount}`, pageWidth / 2, pageHeight - 10, { align: 'center' });
+                }
+
+                // Save PDF
+                pdf.save(`x-knowledge-graph-${new Date().toISOString().split('T')[0]}.pdf`);
+
+                closeExportModal();
+
+            } catch (error) {
+                console.error('Error generating PDF:', error);
+                alert('Error generating PDF. Please try again.');
+            }
+        }
+
+        // ==================== INITIALIZATION ====================
+
+        const savedView = localStorage.getItem('xkg_current_view');
+        // Default to 'list' view - only switch if a valid saved view exists
+        if (savedView && (savedView === 'list' || savedView === 'graph' || savedView === 'timeline' || savedView === 'taskboard' || savedView === 'clusters' || savedView === 'conversation')) {
+            switchView(savedView);
+        } else {
+            // Ensure list view is active by default
+            switchView('list');
+        }
+
+        // Load theme preference
+        loadThemePreference();
+
+        window.addEventListener('resize', renderGraph);
+
+        document.getElementById('help-modal').addEventListener('click', (e) => {
+            if (e.target === document.getElementById('help-modal')) {
+                hideHelp();
+            }
+        });
+
+        document.getElementById('topic-modal').addEventListener('click', (e) => {
+            if (e.target === document.getElementById('topic-modal')) {
+                hideTopicModal();
+            }
+        });
+
+        // ==================== TOPIC DRILL-DOWN MODAL ====================
+
+        let currentTopicData = null;
+        let currentModalTab = 'actions';
+
+        function showTopicModal(topicName) {
+            const topic = topics[topicName];
+            if (!topic) return;
+
+            currentTopicData = topic;
+            currentModalTab = 'actions';
+
+            document.getElementById('modal-topic-name').textContent = topicName.toUpperCase();
+            document.getElementById('topic-modal').style.display = 'block';
+
+            // Reset tab styling
+            document.querySelectorAll('.modal-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.querySelector('.modal-tab[data-tab="actions"]').classList.add('active');
+
+            renderModalContent();
+        }
+
+        function hideTopicModal() {
+            document.getElementById('topic-modal').style.display = 'none';
+            currentTopicData = null;
+        }
+
+        function switchModalTab(tab) {
+            currentModalTab = tab;
+
+            document.querySelectorAll('.modal-tab').forEach(t => {
+                t.classList.toggle('active', t.dataset.tab === tab);
+            });
+
+            renderModalContent();
+        }
+
+        function renderModalContent() {
+            if (!currentTopicData) return;
+
+            const content = document.getElementById('modal-content');
+
+            if (currentModalTab === 'actions') {
+                const items = currentTopicData.items || [];
+                document.getElementById('modal-actions-count').textContent = items.length;
+
+                if (items.length === 0) {
+                    content.innerHTML = `
+                        <div class="modal-empty">
+                            <div class="icon">📋</div>
+                            <p>No actions in this topic</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                // Sort by date (newest first)
+                const sortedItems = [...items].sort((a, b) =>
+                    new Date(b.created_at || 0) - new Date(a.created_at || 0)
+                );
+
+                content.innerHTML = `
+                    <div class="modal-section-title">
+                        <span>📋</span> Actions in "${currentTopicData.name}"
+                    </div>
+                    ${sortedItems.map(item => `
+                        <div class="modal-action-card" onclick="selectActionItem('${item.id}')">
+                            <div class="modal-action-text">${escapeHtml(item.text)}</div>
+                            <div class="modal-action-meta">
+                                <span class="task-priority-badge priority-${item.priority}">${item.priority}</span>
+                                <span class="status-badge ${item.status === 'complete' ? 'complete' : 'pending'}">${item.status}</span>
+                                <span>${formatDate(item.created_at)}</span>
+                                <span>${item.source_type}</span>
+                                ${item.amazon_link ? `
+                                    <a href="${item.amazon_link}" target="_blank" class="amazon-link" onclick="event.stopPropagation()">
+                                        <span>🛒</span> View on Amazon
+                                    </a>
+                                ` : ''}
+                            </div>
+                        </div>
+                    `).join('')}
+                `;
+            } else {
+                // Tweets tab - filter graph nodes by topic
+                const topicNodes = (graphData.nodes || []).filter(n =>
+                    n.topic === currentTopicData.name || n.type === 'tweet'
+                );
+                document.getElementById('modal-tweets-count').textContent = topicNodes.length;
+
+                if (topicNodes.length === 0) {
+                    content.innerHTML = `
+                        <div class="modal-empty">
+                            <div class="icon">🐦</div>
+                            <p>No tweets found for this topic</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                content.innerHTML = `
+                    <div class="modal-section-title">
+                        <span>🐦</span> Tweets in "${currentTopicData.name}"
+                    </div>
+                    ${topicNodes.map(node => `
+                        <div class="modal-tweet-card" onclick="selectNodeFromModal('${node.id}')">
+                            <div class="modal-tweet-text">${escapeHtml(node.text || node.label || '')}</div>
+                            <div class="modal-action-meta">
+                                <span>${node.author || 'Unknown'}</span>
+                                <span>${formatDate(node.date || node.created_at)}</span>
+                            </div>
+                        </div>
+                    `).join('')}
+                `;
+            }
+        }
+
+        function selectActionItem(actionId) {
+            const action = actions.find(a => a.id === actionId);
+            if (action) showNodeDetails(action);
+        }
+
+        function selectNodeFromModal(nodeId) {
+            const node = graphData.nodes.find(n => n.id === nodeId);
+            if (node) showNodeDetails(node);
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // ==================== UPDATED CLUSTER RENDER ====================
+
+        // Override renderClusters to add click handlers for drill-down
+        const originalRenderClusters = renderClusters;
+        renderClusters = function() {
+            const container = document.getElementById('clusters-grid');
+            const topicEntries = Object.entries(topics);
+
+            if (topicEntries.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="icon">🏷️</div>
+                        <h3>No Topic Clusters</h3>
+                        <p>Load an X export to see your topics organized by keywords</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = topicEntries.map(([name, topic]) => `
+                <div class="cluster-card" data-cluster="${name}">
+                    <div class="cluster-header" onclick="toggleCluster('${name}')">
+                        <div class="cluster-name">
+                            <span class="cluster-expand-icon">▶</span>
+                            ${name}
+                        </div>
+                        <span class="cluster-count">${topic.action_count || 0}</span>
+                    </div>
+                    <div class="cluster-items hidden" id="cluster-items-${name.replace(/\s/g, '-')}">
+                        ${(topic.items || []).map(item => `
+                            <div class="cluster-item" onclick="selectClusterItem('${item.id}')">
+                                <div class="cluster-item-title">${item.text.substring(0, 60)}${item.text.length > 60 ? '...' : ''}</div>
+                                <div class="cluster-item-meta">
+                                    <span class="task-priority-badge priority-${item.priority}">${item.priority}</span>
+                                    ${item.amazon_link ? '<span style="color: #FF9900;">🛒 Amazon</span>' : ''}
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `).join('');
+
+            document.getElementById('cluster-count').textContent = topicEntries.length;
+        };
+
+        // Updated task card to show Amazon links
+        const originalCreateTaskCard = createTaskCard;
+        createTaskCard = function(action) {
+            const initial = (action.assignee || 'U')[0].toUpperCase();
+            const amazonLink = action.amazon_link || '';
+
+            return `
+                <div class="task-card priority-${action.priority}"
+                     draggable="true"
+                     data-action-id="${action.id}"
+                     onclick="selectTask('${action.id}')">
+                    <div class="task-title">${action.text}</div>
+                    <div class="task-meta">
+                        <span class="task-priority-badge">${action.priority}</span>
+                        <div class="task-assignee">
+                            <div class="task-assignee-avatar">${initial}</div>
+                            ${action.assignee || 'Unassigned'}
+                        </div>
+                    </div>
+                    ${amazonLink ? `
+                        <div style="margin-top: 8px;">
+                            <a href="${amazonLink}" target="_blank" class="amazon-link" onclick="event.stopPropagation()" style="width: 100%; justify-content: center; box-sizing: border-box;">
+                                <span>🛒</span> View on Amazon
+                            </a>
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+        };
+
+        // Updated details panel for actions
+        const originalShowNodeDetails = showNodeDetails;
+        showNodeDetails = function(node) {
+            const typeColors = { tweet: '#3498db', action: '#e94560', topic: '#00d9ff', user: '#9b59b6', grok: '#e94560' };
+
+            let detailsHtml = `
+                <div class="detail-card">
+                    <div class="detail-row">
+                        <div class="detail-label">Type</div>
+                        <div class="detail-value" style="color: ${typeColors[node.type] || '#ccc'}">
+                            ● ${node.type || 'Unknown'}
+                        </div>
+                    </div>
+            `;
+
+            if (node.label || node.text) {
+                detailsHtml += `
+                    <div class="detail-row">
+                        <div class="detail-label">Content</div>
+                        <div class="detail-value">${escapeHtml(node.label || node.text)}</div>
+                    </div>
+                `;
+            }
+
+            if (node.topic) {
+                detailsHtml += `
+                    <div class="detail-row">
+                        <div class="detail-label">Topic</div>
+                        <div class="detail-value">
+                            <span style="cursor: pointer; color: var(--accent-primary);" onclick="showTopicModal('${node.topic}')">
+                                ${node.topic} 👁️
+                            </span>
+                        </div>
+                    </div>
+                `;
+            }
+
+            if (node.priority) {
+                detailsHtml += `
+                    <div class="detail-row">
+                        <div class="detail-label">Priority</div>
+                        <div class="detail-value">
+                            <span class="task-priority-badge priority-${node.priority}">${node.priority}</span>
+                        </div>
+                    </div>
+                `;
+            }
+
+            if (node.status) {
+                detailsHtml += `
+                    <div class="detail-row">
+                        <div class="detail-label">Status</div>
+                        <div class="detail-value">
+                            <span class="status-badge ${node.status === 'complete' ? 'complete' : 'pending'}">
+                                ${node.status}
+                            </span>
+                        </div>
+                    </div>
+                `;
+            }
+
+            if (node.amazon_link) {
+                detailsHtml += `
+                    <div class="detail-row" style="margin-top: 16px;">
+                        <a href="${node.amazon_link}" target="_blank" class="amazon-link" style="width: 100%; justify-content: center; box-sizing: border-box;">
+                            <span>🛒</span> Search on Amazon
+                        </a>
+                    </div>
+                `;
+            }
+
+            detailsHtml += '</div>';
+            els.details.innerHTML = detailsHtml;
+        };
+        
+        } catch(e) {
+            console.error('MAIN SCRIPT ERROR:', e.message, e.stack);
+        }
+    </script>
+
+        <!-- Details Panel -->
+        <div id="details-panel" style="display:none; position:fixed; right:0; top:0; width:300px; height:100%; background:#15202b; border-left:1px solid #333; z-index:1000; padding:16px; overflow-y:auto;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+                <h3 style="margin:0;color:#fff;">DETAILS</h3>
+                <button onclick="document.getElementById('details-panel').style.display='none'" style="background:none;border:none;color:#fff;cursor:pointer;font-size:20px;">×</button>
+            </div>
+            <div id="details-content" style="color:#71767b;"></div>
+        </div>
+</body>
+</html>
