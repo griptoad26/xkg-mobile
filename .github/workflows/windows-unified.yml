@@ -18,6 +18,9 @@ jobs:
       with:
         path: xkg-mobile
         fetch-depth: 1
+      # Working dir: D:\a\_work\1\s  (where 1 = job number, s = workspace)
+      # But on Windows runner, actual path is D:\a\xkg-mobile\xkg-mobile\xkg-mobile
+      # with path=xkg-mobile, files go to: D:\a\xkg-mobile\xkg-mobile\xkg-mobile\xkg-mobile
     
     - name: Setup Flutter
       uses: subosito/flutter-action@v2
@@ -31,6 +34,7 @@ jobs:
     
     - name: Install deps
       run: |
+        cd xkg-mobile
         flutter pub get
         pip install --timeout=120 flask flask-cors waitress pyinstaller networkx pandas numpy requests
     
@@ -42,39 +46,50 @@ jobs:
     - name: Build XKG Server EXE
       shell: pwsh
       run: |
-        $repoRoot = "D:\a\xkg-mobile\xkg-mobile\xkg-mobile"
-        Set-Location "$repoRoot\xkg-mobile\xkg-server"
-        if (!(Test-Path "start_waitress.py")) {
-            Write-Host "ERROR: start_waitress.py not found at $(Get-Location)"
+        # $PWD is D:\a\_work\1\s (standard runner working directory)
+        # But files are at: D:\a\xkg-mobile\xkg-mobile\xkg-mobile\xkg-mobile\xkg-server
+        # Use explicit GITHUB_WORKSPACE which is D:\a\_work\1\s
+        $ws = $env:GITHUB_WORKSPACE
+        $serverDir = Join-Path $ws "xkg-mobile\xkg-server"
+        Write-Host "WS: $ws"
+        Write-Host "ServerDir: $serverDir"
+        if (!(Test-Path "$serverDir\start_waitress.py")) {
+            Write-Host "ERROR: $serverDir\start_waitress.py not found"
+            if (Test-Path $ws) {
+                Write-Host "WS contents:"
+                Get-ChildItem $ws | ForEach-Object { Write-Host "  $($_.Name)" }
+            }
             exit 1
         }
-        Write-Host "Building XKG Server..."
+        Set-Location $serverDir
+        Write-Host "Building XKG Server from $(Get-Location)"
         pyinstaller --onefile --name XKnowledgeGraphServer --hidden-import flask --hidden-import flask_cors --hidden-import waitress --hidden-import werkzeug --hidden-import jinja2 --hidden-import markupsafe --hidden-import networkx --hidden-import pandas --hidden-import numpy --hidden-import requests start_waitress.py
-        Set-Location $repoRoot
-        $exePath = "xkg-mobile\xkg-server\dist\XKnowledgeGraphServer.exe"
+        Set-Location $ws
+        $exePath = "$serverDir\dist\XKnowledgeGraphServer.exe"
         if (Test-Path $exePath) {
             $size = [math]::Round((Get-Item $exePath).Length / 1MB, 1)
             Write-Host "Server EXE built: ${size}MB"
         } else {
-            Write-Host "ERROR: Server exe not found at $exePath"
-            Get-ChildItem "xkg-mobile\xkg-server\dist" -ErrorAction SilentlyContinue
+            Write-Host "ERROR: Server exe not found"
             exit 1
         }
     
     - name: Package Bundle
       shell: pwsh
       run: |
-        $repoRoot = "D:\a\xkg-mobile\xkg-mobile\xkg-mobile"
-        New-Item -ItemType Directory -Force -Path "$repoRoot\xkg-desktop-bundle" | Out-Null
-        Get-ChildItem "$repoRoot\xkg-mobile\build\windows\x64\runner\Release" -Recurse -ErrorAction SilentlyContinue | Copy-Item -Destination "$repoRoot\xkg-desktop-bundle\" -ErrorAction SilentlyContinue
-        Copy-Item "$repoRoot\xkg-mobile\xkg-server\dist\XKnowledgeGraphServer.exe" "$repoRoot\xkg-desktop-bundle\"
-        Copy-Item "$repoRoot\xkg-mobile\xkg-server\start_waitress.py" "$repoRoot\xkg-desktop-bundle\"
+        $ws = $env:GITHUB_WORKSPACE
+        $bundleDir = Join-Path $ws "xkg-desktop-bundle"
+        $mobileDir = Join-Path $ws "xkg-mobile"
+        New-Item -ItemType Directory -Force -Path $bundleDir | Out-Null
+        Get-ChildItem "$mobileDir\build\windows\x64\runner\Release" -Recurse -ErrorAction SilentlyContinue | Copy-Item -Destination "$bundleDir\" -ErrorAction SilentlyContinue
+        Copy-Item "$mobileDir\xkg-server\dist\XKnowledgeGraphServer.exe" $bundleDir\
+        Copy-Item "$mobileDir\xkg-server\start_waitress.py" $bundleDir\
         
-        "@`n@echo off`nstart XKnowledgeGraphServer.exe`npause`n"@ | Out-File -FilePath "$repoRoot\xkg-desktop-bundle\START-SERVER.bat" -Encoding ASCII
-        "@`n@echo off`nstart xkg_mobile.exe`npause`n"@ | Out-File -FilePath "$repoRoot\xkg-desktop-bundle\START-APP.bat" -Encoding ASCII
-        "@`nXKG Desktop`n1. START-SERVER.bat`n2. START-APP.bat`n"@ | Out-File -FilePath "$repoRoot\xkg-desktop-bundle\README.txt" -Encoding ASCII
+        "@`n@echo off`nstart XKnowledgeGraphServer.exe`npause`n"@ | Out-File -FilePath "$bundleDir\START-SERVER.bat" -Encoding ASCII
+        "@`n@echo off`nstart xkg_mobile.exe`npause`n"@ | Out-File -FilePath "$bundleDir\START-APP.bat" -Encoding ASCII
+        "@`nXKG Desktop`n1. START-SERVER.bat`n2. START-APP.bat`n"@ | Out-File -FilePath "$bundleDir\README.txt" -Encoding ASCII
         
-        Get-ChildItem "$repoRoot\xkg-desktop-bundle" | Format-Table Name, @{N='MB';E={[math]::Round($_.Length/1MB,2)}} -AutoSize
+        Get-ChildItem $bundleDir | Format-Table Name, @{N='MB';E={[math]::Round($_.Length/1MB,2)}} -AutoSize
     
     - name: Upload bundle
       uses: actions/upload-artifact@v4
