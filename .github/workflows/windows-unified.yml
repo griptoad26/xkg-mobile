@@ -18,9 +18,6 @@ jobs:
       with:
         path: xkg-mobile
         fetch-depth: 1
-      # Working dir: D:\a\_work\1\s  (where 1 = job number, s = workspace)
-      # But on Windows runner, actual path is D:\a\xkg-mobile\xkg-mobile\xkg-mobile
-      # with path=xkg-mobile, files go to: D:\a\xkg-mobile\xkg-mobile\xkg-mobile\xkg-mobile
     
     - name: Setup Flutter
       uses: subosito/flutter-action@v2
@@ -46,23 +43,9 @@ jobs:
     - name: Build XKG Server EXE
       shell: pwsh
       run: |
-        # $PWD is D:\a\_work\1\s (standard runner working directory)
-        # But files are at: D:\a\xkg-mobile\xkg-mobile\xkg-mobile\xkg-mobile\xkg-server
-        # Use explicit GITHUB_WORKSPACE which is D:\a\_work\1\s
         $ws = $env:GITHUB_WORKSPACE
         $serverDir = Join-Path $ws "xkg-mobile\xkg-server"
-        Write-Host "WS: $ws"
-        Write-Host "ServerDir: $serverDir"
-        if (!(Test-Path "$serverDir\start_waitress.py")) {
-            Write-Host "ERROR: $serverDir\start_waitress.py not found"
-            if (Test-Path $ws) {
-                Write-Host "WS contents:"
-                Get-ChildItem $ws | ForEach-Object { Write-Host "  $($_.Name)" }
-            }
-            exit 1
-        }
         Set-Location $serverDir
-        Write-Host "Building XKG Server from $(Get-Location)"
         pyinstaller --onefile --name XKnowledgeGraphServer --hidden-import flask --hidden-import flask_cors --hidden-import waitress --hidden-import werkzeug --hidden-import jinja2 --hidden-import markupsafe --hidden-import networkx --hidden-import pandas --hidden-import numpy --hidden-import requests start_waitress.py
         Set-Location $ws
         $exePath = "$serverDir\dist\XKnowledgeGraphServer.exe"
@@ -82,14 +65,20 @@ jobs:
         $mobileDir = Join-Path $ws "xkg-mobile"
         New-Item -ItemType Directory -Force -Path $bundleDir | Out-Null
         Get-ChildItem "$mobileDir\build\windows\x64\runner\Release" -Recurse -ErrorAction SilentlyContinue | Copy-Item -Destination "$bundleDir\" -ErrorAction SilentlyContinue
-        Copy-Item "$mobileDir\xkg-server\dist\XKnowledgeGraphServer.exe" $bundleDir\
-        Copy-Item "$mobileDir\xkg-server\start_waitress.py" $bundleDir\
+        Copy-Item "$mobileDir\xkg-server\dist\XKnowledgeGraphServer.exe" $bundleDir\ -ErrorAction Stop
+        Copy-Item "$mobileDir\xkg-server\start_waitress.py" $bundleDir\ -ErrorAction Stop
         
-        "@`n@echo off`nstart XKnowledgeGraphServer.exe`npause`n"@ | Out-File -FilePath "$bundleDir\START-SERVER.bat" -Encoding ASCII
-        "@`n@echo off`nstart xkg_mobile.exe`npause`n"@ | Out-File -FilePath "$bundleDir\START-APP.bat" -Encoding ASCII
-        "@`nXKG Desktop`n1. START-SERVER.bat`n2. START-APP.bat`n"@ | Out-File -FilePath "$bundleDir\README.txt" -Encoding ASCII
+        $serverBat = "@echo off`nstart XKnowledgeGraphServer.exe`npause"
+        [System.IO.File]::WriteAllText("$bundleDir\START-SERVER.bat", $serverBat)
         
-        Get-ChildItem $bundleDir | Format-Table Name, @{N='MB';E={[math]::Round($_.Length/1MB,2)}} -AutoSize
+        $appBat = "@echo off`nstart xkg_mobile.exe`npause"
+        [System.IO.File]::WriteAllText("$bundleDir\START-APP.bat", $appBat)
+        
+        $readme = "XKG Desktop Bundle`n=================`n1. START-SERVER.bat (starts server on port 18050)`n2. START-APP.bat (launches the app)`n"
+        [System.IO.File]::WriteAllText("$bundleDir\README.txt", $readme)
+        
+        Write-Host "Bundle contents:"
+        Get-ChildItem $bundleDir | ForEach-Object { $sz = [math]::Round($_.Length/1MB,2); Write-Host "  $($_.Name) - ${sz}MB" }
     
     - name: Upload bundle
       uses: actions/upload-artifact@v4
