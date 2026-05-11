@@ -19,11 +19,9 @@ jobs:
       run: |
         flutter pub get
         flutter build windows --release
-        dir build\\windows\\x64\\release\\bundle /s /b 2>nul || echo "checking alternative..."
-        dir build\\windows\\x64\\release /s /b 2>nul || echo "no release folder"
     
     - name: Upload bundle
       uses: actions/upload-artifact@v4
       with:
-        name: xkg_mobile-windows-bundle
-        path: build/windows/x64/release/bundle/
+        name: xkg_mobile-windows
+        path: build/windows/x64/runner/Release/
