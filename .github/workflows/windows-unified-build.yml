@@ -1,0 +1,134 @@
+name: Build XKG Windows Desktop (Unified)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    
+    steps:
+    - name: Checkout XKG Server
+      uses: actions/checkout@v4
+      with:
+        path: xkg-server
+    
+    - name: Checkout XKG Mobile
+      uses: actions/checkout@v4
+      with:
+        repository: griptoad26/xkg-mobile
+        path: xkg-mobile
+        ref: main
+    
+    - name: Setup Flutter
+      uses: subosito/flutter-action@v2
+      with:
+        flutter-version: '3.24.5'
+        cache-dir: C:\flutter\.pub-cache
+    
+    - name: Setup Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+        cache: 'pip'
+    
+    - name: Install Flutter deps
+      run: |
+        cd xkg-mobile
+        flutter pub get
+    
+    - name: Install Python deps
+      run: |
+        pip install flask flask-cors waitress pyinstaller networkx pandas numpy requests
+    
+    - name: Build Flutter Windows
+      run: |
+        cd xkg-mobile
+        flutter build windows --release
+      env:
+        FLUTTER_ROOT: C:\flutter
+    
+    - name: Build XKG Server EXE
+      run: |
+        pip install flask flask-cors waitress requests networkx pandas numpy
+        pyinstaller --onefile --name XKnowledgeGraphServer ^
+          --add-data "frontend;frontend" ^
+          --add-data "core;core" ^
+          --hidden-import flask ^
+          --hidden-import flask_cors ^
+          --hidden-import waitress ^
+          --hidden-import werkzeug ^
+          --hidden-import jinja2 ^
+          --hidden-import markupsafe ^
+          --hidden-import networkx ^
+          --hidden-import pandas ^
+          --hidden-import numpy ^
+          --hidden-import requests ^
+          start_waitress.py
+      working-directory: xkg-server
+      continue-on-error: true
+    
+    - name: Package Bundle
+      shell: bash
+      run: |
+        mkdir -p xkg-desktop-bundle
+        cp -r xkg-mobile/build/windows/x64/runner/Release/* xkg-desktop-bundle/ 2>/dev/null || true
+        cp xkg-server/dist/XKnowledgeGraphServer.exe xkg-desktop-bundle/ 2>/dev/null || true
+        cp xkg-server/start_waitress.py xkg-desktop-bundle/ 2>/dev/null || true
+        
+        cat > xkg-desktop-bundle/START-HERE.bat << 'SCRIPT'
+        @echo off
+        echo ========================================
+        echo   XKG Desktop - Knowledge Graph
+        echo ========================================
+        echo.
+        echo This bundle contains:
+        echo   - XKG Mobile App (xkg_mobile.exe)
+        echo   - XKG Server (XKnowledgeGraphServer.exe)
+        echo.
+        echo 1. First: Run START-SERVER.bat
+        echo 2. Then: Run START-APP.bat
+        echo.
+        pause
+        SCRIPT
+        
+        cat > xkg-desktop-bundle/START-SERVER.bat << 'SCRIPT'
+        @echo off
+        if exist "XKnowledgeGraphServer.exe" (
+            start "" XKnowledgeGraphServer.exe
+            echo XKG Server started on port 18050
+        ) else (
+            echo XKnowledgeGraphServer.exe not found.
+            echo Try: python start_waitress.py
+            echo Requirements: pip install flask flask-cors waitress networkx pandas numpy
+        )
+        pause
+        SCRIPT
+        
+        cat > xkg-desktop-bundle/START-APP.bat << 'SCRIPT'
+        @echo off
+        start "" xkg_mobile.exe
+        echo XKG App launched!
+        pause
+        SCRIPT
+        
+        cat > xkg-desktop-bundle/README.txt << 'SCRIPT'
+        XKG Desktop Bundle
+        ==================
+        1. Run START-SERVER.bat to start the knowledge graph server on port 18050
+        2. Run START-APP.bat to launch the XKG desktop app
+        3. App connects to server at http://localhost:18050
+        
+        If server exe is missing, install Python 3.11+ and run:
+          pip install flask flask-cors waitress networkx pandas numpy
+          python start_waitress.py
+        SCRIPT
+        
+        du -sh xkg-desktop-bundle/
+    
+    - name: Upload bundle
+      uses: actions/upload-artifact@v4
+      with:
+        name: xkg-desktop-windows-bundle
+        path: xkg-desktop-bundle/**
+        retention-days: 30

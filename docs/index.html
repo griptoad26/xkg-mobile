@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>XKG Mobile - User Guide</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #0a0a0f 0%, #1a1a2e 100%);
+      color: #fff;
+      min-height: 100vh;
+      padding: 40px 20px;
+    }
+    .container { max-width: 800px; margin: 0 auto; }
+    h1 {
+      font-size: 36px;
+      margin-bottom: 8px;
+      background: linear-gradient(90deg, #6366f1, #8b5cf6);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .subtitle { color: #888; margin-bottom: 40px; }
+    
+    .screen {
+      background: #12121a;
+      border-radius: 16px;
+      padding: 24px;
+      margin-bottom: 24px;
+      border: 1px solid #2a2a3a;
+    }
+    .screen h2 {
+      font-size: 24px;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .screen-icon {
+      width: 40px;
+      height: 40px;
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+    }
+    
+    .feature {
+      display: flex;
+      gap: 16px;
+      padding: 16px;
+      background: #1a1a25;
+      border-radius: 12px;
+      margin-bottom: 12px;
+    }
+    .feature-icon {
+      width: 36px;
+      height: 36px;
+      background: #6366f1;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .feature h3 { font-size: 16px; margin-bottom: 4px; }
+    .feature p { color: #888; font-size: 14px; }
+    
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 12px;
+      margin-top: 16px;
+    }
+    .app-tile {
+      background: #1a1a25;
+      border-radius: 12px;
+      padding: 16px;
+      text-align: center;
+      border: 1px solid #2a2a3a;
+      transition: transform 0.2s, border-color 0.2s;
+    }
+    .app-tile:hover {
+      transform: translateY(-2px);
+      border-color: #6366f1;
+    }
+    .app-tile-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
+      margin: 0 auto 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+    }
+    .app-tile h4 { font-size: 14px; margin-bottom: 4px; }
+    .app-tile p { font-size: 11px; color: #666; }
+    
+    .step {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    .step-num {
+      width: 28px;
+      height: 28px;
+      background: #6366f1;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      font-weight: bold;
+      flex-shrink: 0;
+    }
+    .step p { color: #aaa; font-size: 14px; line-height: 1.6; }
+    
+    .warning {
+      background: rgba(251, 191, 36, 0.1);
+      border: 1px solid #fbbf24;
+      border-radius: 8px;
+      padding: 12px 16px;
+      color: #fbbf24;
+      font-size: 14px;
+      margin-top: 12px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>XKG Mobile</h1>
+    <p class="subtitle">Unified launcher for all AI chatbots</p>
+    
+    <!-- Home Screen -->
+    <div class="screen">
+      <h2><span class="screen-icon">🏠</span> Home Screen</h2>
+      <p style="color:#888;margin-bottom:20px;">The main screen showing all available AI chatbots</p>
+      
+      <div class="grid">
+        <div class="app-tile">
+          <div class="app-tile-icon" style="background:#000;">🤖</div>
+          <h4>Grok</h4>
+          <p>x.com/grok</p>
+        </div>
+        <div class="app-tile">
+          <div class="app-tile-icon" style="background:#10A37F;">🧠</div>
+          <h4>ChatGPT</h4>
+          <p>chatgpt.com</p>
+        </div>
+        <div class="app-tile">
+          <div class="app-tile-icon" style="background:#D4A574;">✨</div>
+          <h4>Claude</h4>
+          <p>claude.ai</p>
+        </div>
+        <div class="app-tile">
+          <div class="app-tile-icon" style="background:#8AB4F8;">⭐</div>
+          <h4>Gemini</h4>
+          <p>gemini.google.com</p>
+        </div>
+        <div class="app-tile">
+          <div class="app-tile-icon" style="background:#B649FF;">🔍</div>
+          <h4>Perplexity</h4>
+          <p>perplexity.ai</p>
+        </div>
+      </div>
+      
+      <div class="feature" style="margin-top:20px;">
+        <div class="feature-icon">🔍</div>
+        <div>
+          <h3>Search Bar</h3>
+          <p>Search your XKG knowledge base. Requires XKG to be running and configured in Settings.</p>
+        </div>
+      </div>
+      
+      <div class="feature">
+        <div class="feature-icon">➕</div>
+        <div>
+          <h3>Add Button (+)</h3>
+          <p>Add your own custom chatbots or websites to the grid.</p>
+        </div>
+      </div>
+      
+      <div class="feature">
+        <div class="feature-icon">⚙️</div>
+        <div>
+          <h3>Settings</h3>
+          <p>Configure XKG endpoint and app settings.</p>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Settings Screen -->
+    <div class="screen">
+      <h2><span class="screen-icon">⚙️</span> Settings Screen</h2>
+      
+      <div class="feature">
+        <div class="feature-icon">🔗</div>
+        <div>
+          <h3>XKG Endpoint</h3>
+          <p>Enter your XKG server URL (e.g., http://localhost:5000 or http://192.168.1.100:5000)</p>
+        </div>
+      </div>
+      
+      <div class="feature">
+        <div class="feature-icon">💾</div>
+        <div>
+          <h3>Save Button</h3>
+          <p>Save the XKG endpoint configuration.</p>
+        </div>
+      </div>
+      
+      <div class="feature">
+        <div class="feature-icon">🧪</div>
+        <div>
+          <h3>Test Button</h3>
+          <p>Test the connection to XKG server.</p>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Add Custom App -->
+    <div class="screen">
+      <h2><span class="screen-icon">➕</span> Add Custom App Screen</h2>
+      <p style="color:#888;margin-bottom:20px;">Add your own chatbots or websites</p>
+      
+      <div class="step">
+        <div class="step-num">1</div>
+        <p><strong>App Name</strong> - Enter a name for your app (e.g., "My AI Chat")</p>
+      </div>
+      
+      <div class="step">
+        <div class="step-num">2</div>
+        <p><strong>URL</strong> - Enter the website URL (must start with http:// or https://)</p>
+      </div>
+      
+      <div class="step">
+        <div class="step-num">3</div>
+        <p><strong>Color</strong> - Choose a color for the app icon</p>
+      </div>
+      
+      <div class="step">
+        <div class="step-num">4</div>
+        <p><strong>Save</strong> - Tap Save to add the app to your grid</p>
+      </div>
+    </div>
+    
+    <!-- How to Use -->
+    <div class="screen">
+      <h2><span class="screen-icon">📖</span> How to Use</h2>
+      
+      <div class="step">
+        <div class="step-num">1</div>
+        <p><strong>Start XKG</strong> - Run XKG on your computer: <code>python main.py</code> in the x-knowledge-graph folder.</p>
+      </div>
+      
+      <div class="step">
+        <div class="step-num">2</div>
+        <p><strong>Configure</strong> - Open XKG Mobile, go to Settings, enter your XKG endpoint.</p>
+      </div>
+      
+      <div class="step">
+        <div class="step-num">3</div>
+        <p><strong>Launch</strong> - Tap any AI chatbot to open it in your phone's browser.</p>
+      </div>
+      
+      <div class="step">
+        <div class="step-num">4</div>
+        <p><strong>Search</strong> - Use the search bar to search your XKG knowledge base.</p>
+      </div>
+      
+      <div class="warning">
+        ⚠️ For local network access, your phone and computer must be on the same WiFi, and you must use your computer's IP address (e.g., http://192.168.1.100:5000).
+      </div>
+    </div>
+    
+    <p style="text-align:center;color:#666;margin-top:40px;">
+      XKG Mobile v0.1.0 • Built with Flutter
+    </p>
+  </div>
+</body>
+</html>

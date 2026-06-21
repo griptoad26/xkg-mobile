@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prompt Review - XKG</title>
+    <style>
+        :root {
+            --bg-primary: #16181c;
+            --bg-secondary: #1d1f23;
+            --bg-tertiary: #2f3336;
+            --text-primary: #e7e9ea;
+            --text-secondary: #71767b;
+            --accent-color: #1d9bf0;
+            --border-color: #2f3336;
+            --success: #00ba7c;
+            --danger: #f4212e;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            margin: 0;
+            padding: 20px;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 20px;
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 20px;
+        }
+        .header h1 {
+            margin: 0;
+            color: var(--accent-color);
+        }
+        .version {
+            color: var(--text-secondary);
+            font-size: 12px;
+        }
+        .controls {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .controls input[type="text"] {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            padding: 10px;
+            border-radius: 20px;
+            width: 300px;
+            font-size: 14px;
+        }
+        .controls select {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            padding: 10px;
+            border-radius: 20px;
+            font-size: 14px;
+        }
+        .prompt-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 12px;
+        }
+        .prompt-text {
+            font-size: 15px;
+            line-height: 1.5;
+            margin-bottom: 12px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        .prompt-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 12px;
+            color: var(--text-secondary);
+            border-top: 1px solid var(--border-color);
+            padding-top: 10px;
+        }
+        .prompt-tags {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+        .tag {
+            background: var(--bg-tertiary);
+            color: var(--accent-color);
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            cursor: pointer;
+        }
+        .tag:hover {
+            background: var(--accent-color);
+            color: white;
+        }
+        .btn {
+            padding: 8px 16px;
+            border-radius: 20px;
+            border: none;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+        }
+        .btn-danger {
+            background: var(--danger);
+            color: white;
+        }
+        .btn-danger:hover {
+            opacity: 0.9;
+        }
+        .btn-success {
+            background: var(--success);
+            color: white;
+        }
+        .btn-secondary {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+        }
+        .stats {
+            color: var(--text-secondary);
+            font-size: 13px;
+        }
+        #prompts-container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        .empty-state {
+            text-align: center;
+            padding: 60px;
+            color: var(--text-secondary);
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div>
+            <h1>📝 Prompt Review</h1>
+            <span class="version">X Knowledge Graph v0.4.46</span>
+        </div>
+        <div class="stats" id="stats"></div>
+    </div>
+    
+    <div class="controls">
+        <input type="text" id="search" placeholder="Search prompts..." oninput="filterPrompts()">
+        <select id="tag-filter" onchange="filterPrompts()">
+            <option value="">All Tags</option>
+        </select>
+        <button class="btn btn-secondary" onclick="exportPrompts()">📥 Export</button>
+        <button class="btn btn-success" onclick="refreshPrompts()">🔄 Refresh</button>
+    </div>
+    
+    <div id="prompts-container"></div>
+    
+    <script>
+        let allPrompts = [];
+        
+        async function loadPrompts() {
+            try {
+                // Try to load from API first
+                const response = await fetch('/api/actions');
+                const actions = await response.json();
+                
+                // Convert actions to prompts format
+                allPrompts = actions.map((a, i) => ({
+                    id: a.id || `action_${i}`,
+                    text: a.text || '',
+                    created_at: a.created_at || new Date().toISOString(),
+                    tags: [],
+                    source_type: a.source_type || 'unknown'
+                }));
+                
+                renderPrompts();
+                updateStats();
+            } catch(e) {
+                console.error('Failed to load prompts:', e);
+                document.getElementById('prompts-container').innerHTML = 
+                    '<div class="empty-state">No prompts found. Load some data first!</div>';
+            }
+        }
+        
+        function renderPrompts() {
+            const container = document.getElementById('prompts-container');
+            const search = document.getElementById('search').value.toLowerCase();
+            const tagFilter = document.getElementById('tag-filter').value;
+            
+            let filtered = allPrompts.filter(p => {
+                const matchesSearch = !search || p.text.toLowerCase().includes(search);
+                const matchesTag = !tagFilter || p.tags.includes(tagFilter);
+                return matchesSearch && matchesTag;
+            });
+            
+            if (filtered.length === 0) {
+                container.innerHTML = '<div class="empty-state">No prompts match your filters.</div>';
+                return;
+            }
+            
+            container.innerHTML = filtered.map(p => `
+                <div class="prompt-card" data-id="${p.id}">
+                    <div class="prompt-text">${escapeHtml(p.text)}</div>
+                    <div class="prompt-meta">
+                        <div class="prompt-tags">
+                            ${p.tags.map(t => `<span class="tag" onclick="removeTag('${p.id}', '${t}')">${t}×</span>`).join('')}
+                            <span class="tag" onclick="addTag('${p.id}')" style="background:var(--accent-color);color:white;">+ Tag</span>
+                        </div>
+                        <div>
+                            <span style="margin-right:10px;">${formatDate(p.created_at)}</span>
+                            <button class="btn btn-danger" onclick="deletePrompt('${p.id}')">🗑️ Delete</button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        
+        function formatDate(dateStr) {
+            const date = new Date(dateStr);
+            return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+        }
+        
+        function filterPrompts() {
+            renderPrompts();
+        }
+        
+        async function deletePrompt(id) {
+            if (!confirm('Are you sure you want to delete this prompt?')) return;
+            
+            try {
+                await fetch(`/api/actions/${id}`, { method: 'DELETE' });
+                allPrompts = allPrompts.filter(p => p.id !== id);
+                renderPrompts();
+                updateStats();
+            } catch(e) {
+                alert('Failed to delete prompt');
+            }
+        }
+        
+        async function addTag(id) {
+            const tag = prompt('Enter tag name:');
+            if (!tag) return;
+            
+            const prompt = allPrompts.find(p => p.id === id);
+            if (prompt && !prompt.tags.includes(tag)) {
+                prompt.tags.push(tag);
+                renderPrompts();
+                updateTagFilter();
+            }
+        }
+        
+        async function removeTag(id, tag) {
+            const prompt = allPrompts.find(p => p.id === id);
+            if (prompt) {
+                prompt.tags = prompt.tags.filter(t => t !== tag);
+                renderPrompts();
+            }
+        }
+        
+        function updateStats() {
+            document.getElementById('stats').textContent = `${allPrompts.length} prompts`;
+        }
+        
+        function updateTagFilter() {
+            const allTags = new Set();
+            allPrompts.forEach(p => p.tags.forEach(t => allTags.add(t)));
+            
+            const select = document.getElementById('tag-filter');
+            select.innerHTML = '<option value="">All Tags</option>' + 
+                Array.from(allTags).map(t => `<option value="${t}">${t}</option>`).join('');
+        }
+        
+        function exportPrompts() {
+            const data = JSON.stringify(allPrompts, null, 2);
+            const blob = new Blob([data], {type: 'application/json'});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'xkg-prompts-export.json';
+            a.click();
+        }
+        
+        function refreshPrompts() {
+            loadPrompts();
+        }
+        
+        // Load on startup
+        loadPrompts();
+    </script>
+</body>
+</html>

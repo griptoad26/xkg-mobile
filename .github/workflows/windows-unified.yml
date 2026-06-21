@@ -1,0 +1,88 @@
+name: Build XKG Windows Desktop (Unified Bundle)
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/windows-unified.yml'
+      - 'xkg-server/**'
+
+jobs:
+  build:
+    runs-on: windows-latest
+    
+    steps:
+    - name: Checkout XKG Mobile
+      uses: actions/checkout@v4
+      with:
+        path: xkg-mobile
+        fetch-depth: 1
+    
+    - name: Setup Flutter
+      uses: subosito/flutter-action@v2
+      with:
+        flutter-version: '3.24.5'
+    
+    - name: Setup Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+    
+    - name: Install deps
+      run: |
+        cd xkg-mobile
+        flutter pub get
+        pip install --timeout=120 flask flask-cors waitress pyinstaller networkx pandas numpy requests
+    
+    - name: Build Flutter Windows
+      run: |
+        cd xkg-mobile
+        flutter build windows --release
+    
+    - name: Build XKG Server EXE
+      shell: pwsh
+      run: |
+        $ws = $env:GITHUB_WORKSPACE
+        $serverDir = Join-Path $ws "xkg-mobile\xkg-server"
+        Set-Location $serverDir
+        pyinstaller --onefile --name XKnowledgeGraphServer --hidden-import flask --hidden-import flask_cors --hidden-import waitress --hidden-import werkzeug --hidden-import jinja2 --hidden-import markupsafe --hidden-import networkx --hidden-import pandas --hidden-import numpy --hidden-import requests start_waitress.py
+        Set-Location $ws
+        $exePath = "$serverDir\dist\XKnowledgeGraphServer.exe"
+        if (Test-Path $exePath) {
+            $size = [math]::Round((Get-Item $exePath).Length / 1MB, 1)
+            Write-Host "Server EXE built: ${size}MB"
+        } else {
+            Write-Host "ERROR: Server exe not found"
+            exit 1
+        }
+    
+    - name: Package Bundle
+      shell: pwsh
+      run: |
+        $ws = $env:GITHUB_WORKSPACE
+        $bundleDir = Join-Path $ws "xkg-desktop-bundle"
+        $mobileDir = Join-Path $ws "xkg-mobile"
+        New-Item -ItemType Directory -Force -Path $bundleDir | Out-Null
+        Get-ChildItem "$mobileDir\build\windows\x64\runner\Release" -Recurse -ErrorAction SilentlyContinue | Copy-Item -Destination "$bundleDir\" -ErrorAction SilentlyContinue
+        Copy-Item "$mobileDir\xkg-server\dist\XKnowledgeGraphServer.exe" $bundleDir\ -ErrorAction Stop
+        Copy-Item "$mobileDir\xkg-server\start_waitress.py" $bundleDir\ -ErrorAction Stop
+        
+        $serverBat = "@echo off`nstart XKnowledgeGraphServer.exe`npause"
+        [System.IO.File]::WriteAllText("$bundleDir\START-SERVER.bat", $serverBat)
+        
+        $appBat = "@echo off`nstart xkg_mobile.exe`npause"
+        [System.IO.File]::WriteAllText("$bundleDir\START-APP.bat", $appBat)
+        
+        $readme = "XKG Desktop Bundle`n=================`n1. START-SERVER.bat (starts server on port 18050)`n2. START-APP.bat (launches the app)`n"
+        [System.IO.File]::WriteAllText("$bundleDir\README.txt", $readme)
+        
+        Write-Host "Bundle contents:"
+        Get-ChildItem $bundleDir | ForEach-Object { $sz = [math]::Round($_.Length/1MB,2); Write-Host "  $($_.Name) - ${sz}MB" }
+    
+    - name: Upload bundle
+      uses: actions/upload-artifact@v4
+      with:
+        name: xkg-desktop-windows-bundle
+        path: xkg-desktop-bundle/**
+        retention-days: 30
