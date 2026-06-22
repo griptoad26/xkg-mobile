@@ -78,8 +78,7 @@ class StorageService {
       print('Error saving auto-sync: $e');
     }
   }
-}
-
+  
   /// Get AI export folder paths
   static Map<String, String> getAIExportPaths() {
     try {
@@ -103,3 +102,4 @@ class StorageService {
       print('Error saving AI export path: $e');
     }
   }
+}
